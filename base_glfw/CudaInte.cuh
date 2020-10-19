@@ -24,6 +24,6 @@
 void launch_kernel(glm::vec3* pos, unsigned int mesh_width,
 	unsigned int mesh_height, float time);
 
-void test_launch_kernel(glm::vec1* pos, unsigned int mesh_width,
+void test_launch_kernel(float* pos, unsigned int mesh_width,
 	unsigned int mesh_height, float time);
 

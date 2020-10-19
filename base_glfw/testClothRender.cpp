@@ -8,7 +8,8 @@ testClothRender::testClothRender()
 
 	test_cudaVAO = -1;
 	test_CudaVboRes = nullptr;
-	//_assignVAOID = -1;
+
+	indexBuffSize = 0;
 }
 
 
@@ -77,7 +78,7 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 
 void testClothRender::CudaUpdateCloth(float in_time) {
 
-	glm::vec1* testOutPtr;
+	float* testOutPtr;
 	size_t num_bytes;
 	checkCudaErrors(cudaGraphicsMapResources(1, &test_CudaVboRes, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&testOutPtr, &num_bytes, test_CudaVboRes));

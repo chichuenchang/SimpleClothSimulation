@@ -1,4 +1,4 @@
-#include "clothRender.h"
+//#include "clothRender.h"
 #include "testClothRender.h"
 
 extern "C" {//force opengl run with nvidia card
