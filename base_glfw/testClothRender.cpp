@@ -13,7 +13,6 @@ testClothRender::testClothRender()
 }
 
 
-
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
 	GLuint attribLoc) {
@@ -21,12 +20,14 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	test_width = numVertsWidth;
 	test_height = numVertsHeight;
 
+	//fill VBO
 	struct testVert {
 		glm::vec3 pos;
 		glm::vec2 texCrd;
+		//fill a zero normal
+		//glm::vec3 normal;
 	};
 	std::vector<testVert> testGrid;
-
 	for (int i = 0; i < test_width; i++) {
 		for (int j = 0; j < test_height; j++) {
 			//each vertex has a vec3 pos and a vec2 uv
@@ -51,7 +52,7 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	glEnableVertexAttribArray(attribLoc+1);//layout location = attribLoc in vs
 	glVertexAttribPointer(attribLoc+1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
 
-	//IBO
+	//fill IBO
 	std::vector<unsigned int> testInd;
 	for (int i = 0; i < test_width - 1; i++)
 	{
@@ -60,9 +61,9 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 			testInd.push_back(i * test_height + j);
 			testInd.push_back(i * test_height + j + test_height);
 		}
-		testInd.push_back(99999);
+		testInd.push_back(RestartInd);
 	}
-
+	//IBO size
 	indexBuffSize = testInd.size();
 	
 	unsigned int AssignIBO;
@@ -90,9 +91,9 @@ void testClothRender::CudaUpdateCloth(float in_time) {
 }
 
 void testClothRender::DrawCloth() {
-	
+	//element draw
 	glEnable(GL_PRIMITIVE_RESTART);
-	glPrimitiveRestartIndex(99999);
+	glPrimitiveRestartIndex(RestartInd);
 	glBindVertexArray(test_cudaVAO);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
@@ -100,6 +101,5 @@ void testClothRender::DrawCloth() {
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glBindVertexArray(0);
-
 }
 

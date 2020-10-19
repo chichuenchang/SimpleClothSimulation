@@ -24,6 +24,7 @@ private:
 	cudaGraphicsResource* test_CudaVboRes;
 	//index buffer size
 	unsigned int indexBuffSize;
+	const int RestartInd = 9999999;
 
 };
 

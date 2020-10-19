@@ -151,8 +151,6 @@
     <ClCompile Include="imgui\imgui_widgets.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mesh.cpp" />
-    <ClCompile Include="stbImage\stb_image.cpp" />
-    <ClCompile Include="stbImage\stb_image_write.cpp" />
     <ClCompile Include="testClothRender.cpp" />
     <ClCompile Include="util.cpp" />
   </ItemGroup>
@@ -168,8 +166,6 @@
     <ClInclude Include="imgui\imstb_textedit.h" />
     <ClInclude Include="imgui\imstb_truetype.h" />
     <ClInclude Include="mesh.hpp" />
-    <ClInclude Include="stbImage\stb_image.h" />
-    <ClInclude Include="stbImage\stb_image_write.h" />
     <ClInclude Include="testClothRender.h" />
     <ClInclude Include="util.hpp" />
   </ItemGroup>
