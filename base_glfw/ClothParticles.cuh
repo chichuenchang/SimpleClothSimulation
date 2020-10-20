@@ -1,4 +1,3 @@
-#pragma once
 
 #include <cuda.h>
 #include <cuda_runtime.h>
@@ -17,6 +16,29 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-void test_launch_kernel(float* pos, unsigned int mesh_width,
-	unsigned int mesh_height, float time, unsigned int vboStridInFloat);
 
+class ClothParticles {
+
+public:
+	ClothParticles();
+
+
+
+private:
+	glm::vec3 pos;
+	glm::vec3 vel;
+	glm::vec3 acc;
+	float mass;
+	glm::vec3 gravity;
+	//
+	bool constraint;
+
+	glm::vec3 Force_Wind;
+	glm::vec3 Air_resis;
+
+	__device__ glm::vec3 ComputeInnerForce();
+	__device__ glm::vec3 ComputeNetForce();
+
+
+
+};

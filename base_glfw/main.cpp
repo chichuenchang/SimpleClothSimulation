@@ -1,4 +1,3 @@
-//#include "clothRender.h"
 #include "testClothRender.h"
 
 extern "C" {//force opengl run with nvidia card
@@ -25,7 +24,7 @@ GLuint shaderProgram;
 
 //cloth object
 //ClothRender cloth;
-testClothRender test;
+testClothRender cloth;
 const unsigned int clothWidth = 32;
 const unsigned int clothHeight = 64;
 
@@ -37,7 +36,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode);
 void cursorPosCallback(GLFWwindow* w, double xp, double yp);
 void framebufferSizeCallback(GLFWwindow* w, int width, int height);
 void initGLFW(GLFWwindow** win, int winWidth, int winHeight);
-/// /////////////////////////////////////////////////////
+/// /////////////////////////////////////////////////////////////////////////
 
 void ComputeTransform(glm::mat4 &returnTransform) {
 
@@ -63,8 +62,8 @@ int main() {
 	GLuint time_uloc = 1;
 
 	//init mesh
-	//cloth.initCloth(clothWidth, clothHeight, 8);
-	test.initCloth(clothWidth, clothHeight, 8);
+	GLuint attribLoc = 8;
+	cloth.initCloth(clothWidth, clothHeight, attribLoc);
 
 	//display
 	while (!glfwWindowShouldClose(window)) {
@@ -82,13 +81,11 @@ int main() {
 		glUniform1f(time_uloc, time);
 
 		//compute with kernel function
-		//cloth.CudaUpdateCloth(time);
-		test.CudaUpdateCloth(time);
+		cloth.CudaUpdateCloth(time);
 		assert(glGetError() == GL_NO_ERROR);
 
 		//draw call
-		//cloth.DrawCloth();
-		test.DrawCloth();
+		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);
 
 		//draw imGui
@@ -109,8 +106,6 @@ int main() {
 
 	return 0;
 }
-
-
 
 /// ///////////////////////////////////////////////////////////////////////////////
 //GLFW definition

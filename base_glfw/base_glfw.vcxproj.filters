@@ -53,9 +53,6 @@
     <ClCompile Include="testClothRender.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="clothRender.cpp">
-      <Filter>Source Files\Archived</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="mesh.hpp">
@@ -91,10 +88,13 @@
     <ClInclude Include="testClothRender.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="clothRender.h">
-      <Filter>Source Files\Archived</Filter>
-    </ClInclude>
     <ClInclude Include="CudaInte.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="ClothParticles.cuh">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Stdfx.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -108,6 +108,9 @@
   </ItemGroup>
   <ItemGroup>
     <CudaCompile Include="CudaInte.cu">
+      <Filter>Source Files</Filter>
+    </CudaCompile>
+    <CudaCompile Include="ClothParticles.cu">
       <Filter>Source Files</Filter>
     </CudaCompile>
   </ItemGroup>

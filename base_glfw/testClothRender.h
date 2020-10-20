@@ -1,9 +1,5 @@
 #pragma once
-#include <glm/glm.hpp>
-#include <vector>
-#include <glad/glad.h>
 #include "util.hpp"
-
 
 class testClothRender
 {
@@ -16,13 +12,13 @@ public:
 	void DrawCloth();
 
 private:
-	unsigned int test_width;
-	unsigned int test_height;
+	unsigned int cloth_width;
+	unsigned int cloth_height;
 
-	//cuda test
 	GLuint test_cudaVAO;
 	cudaGraphicsResource* test_CudaVboRes;
-	//index buffer size
+	unsigned int VBOStrideInFLoat;
+	//ibo
 	unsigned int indexBuffSize;
 	const int RestartInd = 9999999;
 

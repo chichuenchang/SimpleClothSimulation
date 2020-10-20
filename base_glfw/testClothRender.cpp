@@ -3,37 +3,39 @@
 
 testClothRender::testClothRender()
 {
-	test_width = 0;
-	test_height = 0;
+	cloth_width = 0;
+	cloth_height = 0;
 
 	test_cudaVAO = -1;
 	test_CudaVboRes = nullptr;
+	VBOStrideInFLoat = 0;
 
 	indexBuffSize = 0;
 }
-
 
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
 	GLuint attribLoc) {
 
-	test_width = numVertsWidth;
-	test_height = numVertsHeight;
+	cloth_width = numVertsWidth;
+	cloth_height = numVertsHeight;
 
 	//fill VBO
 	struct testVert {
 		glm::vec3 pos;
 		glm::vec2 texCrd;
-		//fill a zero normal
-		//glm::vec3 normal;
+		glm::vec3 normal;
 	};
 	std::vector<testVert> testGrid;
-	for (int i = 0; i < test_width; i++) {
-		for (int j = 0; j < test_height; j++) {
-			//each vertex has a vec3 pos and a vec2 uv
-			testGrid.push_back({ glm::vec3(0.0f), glm::vec2(j / (test_height - 1), i / (test_width - 1)) });
+	for (int i = 0; i < cloth_width; i++) {
+		for (int j = 0; j < cloth_height; j++) {
+			testGrid.push_back({glm::vec3(0.0f), //pos
+								glm::vec2(j / (cloth_height - 1), i / (cloth_width - 1)),//texCoord
+								glm::vec3(0.0f)});//normal
 		}
 	}
+
+	VBOStrideInFLoat = sizeof(testVert)/sizeof(float);
 
 	//gen VAO
 	glGenVertexArrays(1, &test_cudaVAO);
@@ -49,17 +51,19 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	// register this buffer object with CUDA
 	glEnableVertexAttribArray(attribLoc);//layout location = attribLoc in vs
 	glVertexAttribPointer(attribLoc, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
-	glEnableVertexAttribArray(attribLoc+1);//layout location = attribLoc in vs
-	glVertexAttribPointer(attribLoc+1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
+	glEnableVertexAttribArray(attribLoc + 1);//layout location = attribLoc in vs
+	glVertexAttribPointer(attribLoc + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
+	glEnableVertexAttribArray(attribLoc + 2);//layout location = attribLoc in vs
+	glVertexAttribPointer(attribLoc + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
 
 	//fill IBO
 	std::vector<unsigned int> testInd;
-	for (int i = 0; i < test_width - 1; i++)
+	for (int i = 0; i < cloth_width - 1; i++)
 	{
-		for (int j = 0; j < test_height; j++)
+		for (int j = 0; j < cloth_height; j++)
 		{
-			testInd.push_back(i * test_height + j);
-			testInd.push_back(i * test_height + j + test_height);
+			testInd.push_back(i * cloth_height + j);
+			testInd.push_back(i * cloth_height + j + cloth_height);
 		}
 		testInd.push_back(RestartInd);
 	}
@@ -79,13 +83,13 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 
 void testClothRender::CudaUpdateCloth(float in_time) {
 
-	float* testOutPtr;
+	float* d_testOutPtr;
 	size_t num_bytes;
 	checkCudaErrors(cudaGraphicsMapResources(1, &test_CudaVboRes, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&testOutPtr, &num_bytes, test_CudaVboRes));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr, &num_bytes, test_CudaVboRes));
 
 	//call launchKernel here
-	test_launch_kernel(testOutPtr, test_width, test_height, in_time);
+	test_launch_kernel(d_testOutPtr, cloth_width, cloth_height, in_time, VBOStrideInFLoat);
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &test_CudaVboRes, 0));
 }
@@ -96,7 +100,7 @@ void testClothRender::DrawCloth() {
 	glPrimitiveRestartIndex(RestartInd);
 	glBindVertexArray(test_cudaVAO);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
