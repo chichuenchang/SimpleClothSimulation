@@ -16,4 +16,34 @@ void ReloadShader(GLuint &shaderID);
 GLuint compileShader(GLenum type, std::string filename, std::string prepend = "");
 GLuint linkProgram(std::vector<GLuint> shaders);
 
+//delta time
+float GetDeltaT(float& curT, float& lasT);
+
+struct ClothConstant {
+
+	float m;
+	float G;
+	float k;
+	float rLen;	//initial length
+	glm::vec3 Fw; //wind
+	float stp; //time step
+	
+	float dt; //delta time each frame
+	float time; //system time
+
+	float in_testFloat;
+
+};
+
+struct FixedClothConstant {
+
+	unsigned int width;
+	unsigned int height;
+	unsigned int vboStrdFlt;
+	unsigned int OffstPos;
+	unsigned int OffstNm;
+
+};
+
+
 #endif

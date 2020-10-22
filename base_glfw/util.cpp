@@ -1,6 +1,13 @@
 #include "util.hpp"
 using namespace std;
 
+float GetDeltaT(float &curT, float &lasT) {
+	curT = glfwGetTime();
+	float dt = curT - lasT;
+	lasT = curT;
+	return dt;
+}
+
 void ReloadShader(GLuint &shaderID) {
 
 	std::vector<GLuint> shaders;
@@ -35,7 +42,6 @@ void initOpenGL(GLFWwindow* glfwWin) {
 }
 
 
-
 /////////////////////////////////////////////////////////////////////////////
 //ImGui 
 void initGui(GLFWwindow* windowPtr) {
@@ -54,33 +60,6 @@ void initGui(GLFWwindow* windowPtr) {
 }
 
 
-//void drawGui(GLfloat* clearCol, bool show_demo) {
-//	ImGui_ImplOpenGL3_NewFrame();
-//	ImGui_ImplGlfw_NewFrame();
-//	ImGui::NewFrame();
-//	//show demo window
-//	if (show_demo) ImGui::ShowDemoWindow(&show_demo);
-//
-//	static int counter = 0;
-//	{
-//		ImGui::Begin("JC Zheng");                          // Create a window called "Hello, world!" and append into it.
-//
-//		ImGui::ColorEdit3("clear color", clearCol); // Edit 3 floats representing a color
-//
-//		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
-//
-//
-//
-//
-//		static float f1 = 0.123f;
-//		ImGui::SliderFloat("test slider float", &f1, 0.0f, 1.0f, "test float = %.3f");
-//
-//
-//		ImGui::End();
-//	}
-//	ImGui::Render();
-//	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
-//}
 
 //////////////////////////////////////////////////////////////////////
 //shader

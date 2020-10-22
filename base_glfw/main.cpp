@@ -1,5 +1,6 @@
 #include "testClothRender.h"
 #include "util.hpp"
+#include "CudaInte.cuh"
 
 extern "C" {//force opengl run with nvidia card
 	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
@@ -30,8 +31,9 @@ testClothRender cloth;
 const unsigned int clothWidth = 2048;
 const unsigned int clothHeight = 1024;
 
-//interact variable from gui
-float testflt = 0.123;
+//constants passed to cuda
+ClothConstant clothConst;
+FixedClothConstant fxConst;
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -41,7 +43,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode);
 void cursorPosCallback(GLFWwindow* w, double xp, double yp);
 void framebufferSizeCallback(GLFWwindow* w, int width, int height);
 void initGLFW(GLFWwindow** win, int winWidth, int winHeight);
-void drawGui(GLfloat* clearCol, bool show_demo);
+void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst);
 /// /////////////////////////////////////////////////////////////////////////
 
 void ComputeTransform(glm::mat4 &returnTransform) {
@@ -56,11 +58,11 @@ void ComputeTransform(glm::mat4 &returnTransform) {
 	returnTransform = proj * view * trans * rot * scaler;
 }
 
-void PassVarToCuda() {
-
-	cloth.passVarToCudaConst(testflt);
-
-}
+//void PassVarToCuda() {
+//
+//	cloth.passVarToCudaConst(testflt);
+//
+//}
 
 void PassUniform() {
 	//uniform location
@@ -95,12 +97,14 @@ void CleanUpGL() {
 }
 
 int main() {
-	//unsigned int a = 0;
-	//unsigned int b = a - 1;
+
 	InitGL();
 
 	GLuint attribLoc = 8;
-	cloth.initCloth(clothWidth, clothHeight, attribLoc);
+	cloth.initCloth(clothWidth, clothHeight, attribLoc, clothConst, fxConst);
+	
+	//delta time
+	float lastT = 0.0f, currT =0.0f;
 
 	//display
 	while (!glfwWindowShouldClose(window)) {
@@ -110,24 +114,20 @@ int main() {
 
 		glUseProgram(shaderProgram);
 	
-		PassVarToCuda();
 		PassUniform();
-
-		cloth.CudaUpdateCloth(time);
+		
+		clothConst.dt = GetDeltaT(currT, lastT);
+		clothConst.time = currT;
+		std::cout << "currT = " << currT << std::endl;
+		
+		cloth.CudaUpdateCloth(clothConst);
 		assert(glGetError() == GL_NO_ERROR);
-
 		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);
 
-		drawGui(clear_color, show_demo_window);
+		drawGui(clear_color, show_demo_window, &clothConst);
 
 		glUseProgram(0);
-
-
-
-
-
-		
 		glfwSwapBuffers(window);
 	}
 
@@ -207,7 +207,7 @@ void initGLFW(GLFWwindow** win, int winWidth, int winHeight) {
 	glfwSetScrollCallback(*win, scrollCallback);
 }
 
-void drawGui(GLfloat* clearCol, bool show_demo) {
+void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 	ImGui_ImplOpenGL3_NewFrame();
 	ImGui_ImplGlfw_NewFrame();
 	ImGui::NewFrame();
@@ -222,8 +222,10 @@ void drawGui(GLfloat* clearCol, bool show_demo) {
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
+		ImGui::SliderFloat("test slider float", &clothConst->in_testFloat, 0.0f, 1.0f, "test float = %.3f");
+		
 
-		ImGui::SliderFloat("test slider float", &testflt, 0.0f, 1.0f, "test float = %.3f");
+
 
 		ImGui::End();
 	}

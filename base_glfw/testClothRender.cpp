@@ -79,35 +79,49 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 
 }
 
-passVar valuePass;
+void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
+	clothConst.m = 0.1f;
+	clothConst.G = -9.8f;
+	clothConst.k = 0.01f;
+	clothConst.rLen = 0.02f;
+	clothConst.Fw = glm::vec3(0.0f);
+	clothConst.stp = 0.001f;
+	clothConst.dt = 0.000005f;
+	clothConst.time = 0.0f;
+	clothConst.in_testFloat = 0.654f;
+
+	fxClothConst.width = cloth_width;
+	fxClothConst.height = cloth_height;
+	fxClothConst.vboStrdFlt = VBOStrideInFLoat;
+	fxClothConst.OffstPos = 0; //decided by the layout in vbo
+	fxClothConst.OffstNm = 5;
+}
+
+
 
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
-	GLuint attribLoc) {
+	GLuint attribLoc, ClothConstant& clthConst, FixedClothConstant& fxConst) {
 
 	cloth_width = numVertsWidth;
 	cloth_height = numVertsHeight;
-
 	initVBO(attribLoc);
+	
+	initClothConstValue(clthConst, fxConst);
+	
+	copyFixClothConst(&fxConst);
+
 
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes, cudaVBO, cudaGraphicsMapFlagsWriteDiscard));
 
 }
 
 
-void testClothRender::passVarToCudaConst(float in_variable) {
-	//copy the in variable to constant memory
 
 
-	valuePass.in_testFloat = in_variable;
-
-}
-
-
-
-void testClothRender::CudaUpdateCloth(float in_time) {
+void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	
-	copyConstMem(&valuePass);
+	updateClothConst(&in_clothConst);
 	
 	//std::cout << "value float = " << valuePass.in_testFloat << std::endl;
 
@@ -117,7 +131,7 @@ void testClothRender::CudaUpdateCloth(float in_time) {
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr, &num_bytes, CudaVboRes));
 
 	//call launchKernel here
-	Cloth_Launch_Kernel(d_testOutPtr, cloth_width, cloth_height, in_time, VBOStrideInFLoat);
+	Cloth_Launch_Kernel(d_testOutPtr, cloth_width, cloth_height, VBOStrideInFLoat);
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes, 0));
 }

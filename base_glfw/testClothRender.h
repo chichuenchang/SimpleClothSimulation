@@ -1,6 +1,6 @@
 #pragma once
-//#include "util.hpp"
-#include "Stdfx.h"
+#include "util.hpp"
+//#include "Stdfx.h"
 
 class testClothRender
 {
@@ -8,14 +8,11 @@ public:
 	testClothRender();
 
 	void initCloth(const unsigned int numVertsWidth,
-		const unsigned int numVertsHeight, GLuint attribLoc);
-	void CudaUpdateCloth(float in_time);
+		const unsigned int numVertsHeight, GLuint attribLoc,
+		ClothConstant& clthConst, FixedClothConstant& fxConst);
+	void CudaUpdateCloth(ClothConstant clothConst);
 	void DrawCloth();
 
-
-	//test
-	void passVarToCudaConst(float in_variable);
-	//test
 
 private:
 	unsigned int cloth_width;
@@ -31,17 +28,7 @@ private:
 	const int RestartInd = 9999999;
 
 	void initVBO(GLuint AttribLocation);
-
-	//struct passVar {
-
-	//float testfloat;
-
-	//}testPassVar;
-
-
-	//void copyConstMem(passVar in_passVar);
-
-
+	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
 
 };
 
