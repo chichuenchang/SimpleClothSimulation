@@ -126,14 +126,14 @@ glm::vec3 computeInnerForce(float* vboPtr, unsigned int x, unsigned int y) {
     glm::vec3 f_U2 = glm::normalize(posU2 - pos) * cVar.k * (glm::length(posU2 - pos) - cVar.rLen * 1.41421356237f);
     glm::vec3 f_D2 = glm::normalize(posD2 - pos) * cVar.k * (glm::length(posD2 - pos) - cVar.rLen * 1.41421356237f);
     //might as well compute the normal
-    //glm::vec3 normal = glm::normalize(glm::cross((posR - posL), (posU - posD)));
+    glm::vec3 normal = glm::normalize(glm::cross((posR - posL), (posU - posD)));
     
     //pass const test 
 
   
 
     float a = cVar.in_testFloat;
-    glm::vec3 normal = glm::vec3(0.0f, a, 0.0f);
+    //glm::vec3 normal = glm::vec3(0.0f, a, 0.0f);
 
     writeToVBO(normal, vboPtr, x, y, fxVar.OffstNm);
 
@@ -189,7 +189,7 @@ glm::vec3 explicitIntegration(glm::vec3 pos, glm::vec3 nForce, float dt) {
 
 
 __global__ 
-void computeParticlePos_Kernel(float* vboPtr, unsigned int width, 
+void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int width,
     unsigned int height, unsigned int vboStridInFloat)
 {
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -202,7 +202,7 @@ void computeParticlePos_Kernel(float* vboPtr, unsigned int width,
     
     
     //**test read function
-    glm::vec3 posRead = readFromVBO(vboPtr, x, y, fxVar.OffstPos);
+    glm::vec3 posRead = readFromVBO(readBuff, x, y, fxVar.OffstPos);
 
     //test output
     float u = x /100.0f;
@@ -210,18 +210,17 @@ void computeParticlePos_Kernel(float* vboPtr, unsigned int width,
     float freq = 0.5f;
     float w = glm::sin(u  + cVar.time * 1.3f * freq) * glm::cos(v + cVar.time * 1.7f * freq) * 0.5f;
 
-    glm::vec3 ForceNet = computeForceNet(vboPtr, x, y);
-
-
-
+    glm::vec3 ForceNet = computeForceNet(readBuff, x, y);
     glm::vec3 NextPos = explicitIntegration(posRead, ForceNet, cVar.stp * cVar.dt);
 
     
 
+
+
     //write NextPos to VBO
     //test position
     glm::vec3 testPos = glm::vec3(u, w, v);
-    writeToVBO(testPos, vboPtr, x, y, fxVar.OffstPos);
+    writeToVBO(testPos, readBuff, x, y, fxVar.OffstPos);
     
   
 
@@ -230,13 +229,14 @@ void computeParticlePos_Kernel(float* vboPtr, unsigned int width,
 }
 
 
-void Cloth_Launch_Kernel(float* vboPtr, const unsigned int mesh_width, const unsigned int mesh_height, 
+void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int mesh_width, const unsigned int mesh_height,
     unsigned int vboStridInFloat)
 {
  
     dim3 block(32, 32, 1);
     dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
-    computeParticlePos_Kernel << < grid, block >> > (vboPtr, mesh_width, mesh_height, vboStridInFloat);
+    computeParticlePos_Kernel << < grid, block >> > (readBuff, writeBuff, mesh_width,
+        mesh_height, vboStridInFloat);
     CheckCudaErr("simple_vbo_kernel launch fail ");
     
     cudaDeviceSynchronize();

@@ -7,9 +7,11 @@ testClothRender::testClothRender()
 	cloth_width = 0;
 	cloth_height = 0;
 
-	cudaVAO = -1;
-	cudaVBO = -1;
-	CudaVboRes = nullptr;
+	cudaVAO1 = -1;
+	cudaVBO1 = -1;
+	cudaVBO2 = -1;
+	CudaVboRes1 = nullptr;
+	CudaVboRes2 = nullptr;
 	VBOStrideInFLoat = 0;
 
 	indexBuffSize = 0;
@@ -17,7 +19,9 @@ testClothRender::testClothRender()
 
 
 void testClothRender::initVBO(GLuint AttribLocation) {
-	//fill VBO
+	/// <summary>
+	/// ///////////////////////////////////////////
+	/// BUFFER#1
 	struct testVert {
 		glm::vec3 pos;
 		glm::vec2 texCrd;
@@ -30,20 +34,31 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 			testGrid.push_back({glm::vec3((float)i/ 100.0f, 0.0f, (float)j/100.0f ), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(1.0f, 0.0f, 1.0f),//megenta
-								glm::vec3(1.0f, 1.0f, 0.0f) });	//point color	
+								glm::vec3(1.0f, 0.0f, 1.0f) });	//point color megenta	
+		}
+	}
+
+	std::vector<testVert> testGrid2;
+	for (int i = 0; i < cloth_width; i++) {
+		for (int j = 0; j < cloth_height; j++) {
+			testGrid2.push_back({ glm::vec3((float)i / 100.0f, 2.0f, (float)j / 100.0f), //pos
+								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
+								glm::vec3(0.0f, 1.0f, 1.0f),//
+								glm::vec3(0.0f, 1.0f, 1.0f) });	//point color	
 		}
 	}
 
 	VBOStrideInFLoat = sizeof(testVert) / sizeof(float);
 
 	//gen VAO
-	glGenVertexArrays(1, &cudaVAO);
-	glBindVertexArray(cudaVAO);
+	glGenVertexArrays(1, &cudaVAO1);
+	glBindVertexArray(cudaVAO1);
 
 	// create buffer object
-	glGenBuffers(1, &cudaVBO);
-	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
+	glGenBuffers(1, &cudaVBO1);
+	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO1);
 	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid.data(), GL_DYNAMIC_DRAW);
+
 
 	// register this buffer object with CUDA
 	glEnableVertexAttribArray(AttribLocation);//layout location = attribLoc in vs
@@ -73,6 +88,36 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 	unsigned int AssignIBO;
 	glGenBuffers(1, &AssignIBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, testInd.size() * sizeof(unsigned int), testInd.data(), GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	/// <summary>
+	/// ///////////////////////////////////////////
+	/// BUFFER#2
+	/// 
+	glGenVertexArrays(1, &cudaVAO2);
+	glBindVertexArray(cudaVAO2);
+	// create buffer object
+	glGenBuffers(1, &cudaVBO2);
+	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO2);
+	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid2.data(), GL_DYNAMIC_DRAW);
+
+	// register this buffer object with CUDA
+	glEnableVertexAttribArray(AttribLocation);//layout location = attribLoc in vs
+	glVertexAttribPointer(AttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
+	glEnableVertexAttribArray(AttribLocation + 1);//layout location = attribLoc in vs
+	glVertexAttribPointer(AttribLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
+	glEnableVertexAttribArray(AttribLocation + 2);//layout location = attribLoc in vs
+	glVertexAttribPointer(AttribLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
+	glEnableVertexAttribArray(AttribLocation + 3);//layout location = attribLoc in vs
+	glVertexAttribPointer(AttribLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
+	
+	unsigned int AssignIBO2;
+	glGenBuffers(1, &AssignIBO2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO2);
 	glBufferData(GL_ELEMENT_ARRAY_BUFFER, testInd.size() * sizeof(unsigned int), testInd.data(), GL_STATIC_DRAW);
 
 	glBindVertexArray(0);
@@ -117,7 +162,8 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	copyFixClothConst(&fxConst);
 
 
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes, cudaVBO, cudaGraphicsMapFlagsWriteDiscard));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes1, cudaVBO1, cudaGraphicsMapFlagsNone));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsWriteDiscard));
 
 }
 
@@ -126,22 +172,28 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 
 void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes, cudaVBO, cudaGraphicsMapFlagsWriteDiscard));
 	updateClothConst(&in_clothConst);
-	
 
 
 	//std::cout << "value float = " << valuePass.in_testFloat << std::endl;
 
-	float* d_testOutPtr;
-	size_t num_bytes;
-	checkCudaErrors(cudaGraphicsMapResources(1, &CudaVboRes, 0));
-	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr, &num_bytes, CudaVboRes));
+	float* d_testOutPtr1;
+	size_t num_bytes1;
+	checkCudaErrors(cudaGraphicsMapResources(1, &CudaVboRes1, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr1, &num_bytes1, CudaVboRes1));
+	
+	float* d_testOutPtr2;
+	size_t num_bytes2;
+	checkCudaErrors(cudaGraphicsMapResources(1, &CudaVboRes2, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr2, &num_bytes2, CudaVboRes2));
+
+
 
 	//call launchKernel here
-	Cloth_Launch_Kernel(d_testOutPtr, cloth_width, cloth_height, VBOStrideInFLoat);
+	Cloth_Launch_Kernel(d_testOutPtr2, d_testOutPtr2, cloth_width, cloth_height, VBOStrideInFLoat);
 
-	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes1, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes2, 0));
 
 
 
@@ -151,7 +203,7 @@ void testClothRender::DrawCloth() {
 	//element draw
 	glEnable(GL_PRIMITIVE_RESTART);
 	glPrimitiveRestartIndex(RestartInd);
-	glBindVertexArray(cudaVAO);
+	glBindVertexArray(cudaVAO2);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);

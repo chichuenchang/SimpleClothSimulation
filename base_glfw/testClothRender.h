@@ -18,9 +18,12 @@ private:
 	unsigned int cloth_width;
 	unsigned int cloth_height;
 
-	GLuint cudaVAO;
-	GLuint cudaVBO;
-	cudaGraphicsResource* CudaVboRes;
+	GLuint cudaVAO1;
+	GLuint cudaVAO2;
+	GLuint cudaVBO1;
+	GLuint cudaVBO2;
+	cudaGraphicsResource* CudaVboRes1;
+	cudaGraphicsResource* CudaVboRes2;
 	unsigned int VBOStrideInFLoat;
 	//signed int sizeOfVerts;
 	

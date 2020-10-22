@@ -21,7 +21,7 @@
 
 
 
-void Cloth_Launch_Kernel(float* pos, unsigned int mesh_width,
+void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, unsigned int mesh_width,
 	unsigned int mesh_height, unsigned int vboStridInFloat);
 
 void CheckCudaErr(const char* msg);
