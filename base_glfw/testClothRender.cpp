@@ -12,8 +12,6 @@ testClothRender::testClothRender()
 	CudaVboRes = nullptr;
 	VBOStrideInFLoat = 0;
 
-	sizeOfVerts = 0;
-
 	indexBuffSize = 0;
 }
 
@@ -24,13 +22,15 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 		glm::vec3 pos;
 		glm::vec2 texCrd;
 		glm::vec3 normal;
+		glm::vec3 col;
 	};
 	std::vector<testVert> testGrid;
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
 			testGrid.push_back({glm::vec3((float)i/ 100.0f, 0.0f, (float)j/100.0f ), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
-								glm::vec3(1.0f, 0.0f, 1.0f) });//megenta
+								glm::vec3(1.0f, 0.0f, 1.0f),//megenta
+								glm::vec3(1.0f, 1.0f, 0.0f) });	//point color	
 		}
 	}
 
@@ -54,6 +54,9 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 	glVertexAttribPointer(AttribLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
 	glEnableVertexAttribArray(AttribLocation + 2);//layout location = attribLoc in vs
 	glVertexAttribPointer(AttribLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
+	glEnableVertexAttribArray(AttribLocation + 3);//layout location = attribLoc in vs
+	glVertexAttribPointer(AttribLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
+
 
 	//fill IBO
 	std::vector<unsigned int> testInd;
@@ -93,8 +96,10 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.width = cloth_width;
 	fxClothConst.height = cloth_height;
 	fxClothConst.vboStrdFlt = VBOStrideInFLoat;
-	fxClothConst.OffstPos = 0; //decided by the layout in vbo
+	//by the layout in vbo
+	fxClothConst.OffstPos = 0; 
 	fxClothConst.OffstNm = 5;
+	fxClothConst.OffstCol = 8;
 }
 
 

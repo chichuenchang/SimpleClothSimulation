@@ -28,7 +28,7 @@ GLuint shaderProgram;
 //cloth object
 //ClothRender cloth;
 testClothRender cloth;
-const unsigned int clothWidth = 2048;
+const unsigned int clothWidth = 512;
 const unsigned int clothHeight = 1024;
 
 //constants passed to cuda

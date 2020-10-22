@@ -53,6 +53,11 @@ void writeToVBO(glm::vec3 outPos, float* d_vboPtr,
     d_vboPtr[(ind_x * fxConst.height + ind_y) * fxConst.vboStrdFlt + offsetInEachVBOElement + 2] = outPos.z;
 }
 
+__device__
+float length(glm::vec3 a, glm::vec3 b) {
+    return glm::length(b -a );
+}
+
 __device__//normal is here also
 glm::vec3 computeInnerForce(float* vboPtr, unsigned int x, unsigned int y) {
     //                |y-

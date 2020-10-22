@@ -42,7 +42,7 @@ struct FixedClothConstant {
 	unsigned int vboStrdFlt;
 	unsigned int OffstPos;
 	unsigned int OffstNm;
-
+	unsigned int OffstCol;
 };
 
 

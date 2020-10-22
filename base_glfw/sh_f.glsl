@@ -8,6 +8,7 @@ uniform float uTime;
 in vec3 vsOut_pos;
 in vec2 vsOut_uv;
 in vec3 vsOut_normal;
+in vec3 vsOut_pcol;
 
 //[out]
 out vec4 outCol;	// Final pixel color
@@ -24,4 +25,5 @@ void main() {
 	outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f);
 
 	outCol = vec4(vsOut_normal, 1.0f);
+	outCol = vec4(vsOut_pcol, 1.0f);
 }

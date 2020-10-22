@@ -7,11 +7,13 @@ layout (location = 1)uniform float uTime;
 layout(location = 8) in vec3 pos;		
 layout(location = 9) in vec2 uv;		
 layout(location = 10) in vec3 normal;		
+layout(location = 11) in vec3 pcol;		
 
 //[vafying]==========================================
 out vec3 vsOut_pos;
 out vec2 vsOut_uv;
 out vec3 vsOut_normal;
+out vec3 vsOut_pcol;
 
 //[local]============================================
 vec3 disp = vec3(0.0, cos(-10*pos.x + 0.7*uTime), cos(10.0*pos.x + 0.3*uTime));
@@ -29,5 +31,5 @@ void main() {
 	vsOut_normal = normal;
 	vsOut_pos = pos;
 	vsOut_uv = uv;
-
+	vsOut_pcol = pcol;
 }

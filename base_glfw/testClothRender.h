@@ -22,7 +22,8 @@ private:
 	GLuint cudaVBO;
 	cudaGraphicsResource* CudaVboRes;
 	unsigned int VBOStrideInFLoat;
-	unsigned int sizeOfVerts;
+	//signed int sizeOfVerts;
+	
 	//ibo
 	unsigned int indexBuffSize;
 	const int RestartInd = 9999999;
