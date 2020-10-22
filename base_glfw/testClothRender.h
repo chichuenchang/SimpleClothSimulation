@@ -34,5 +34,6 @@ private:
 	void initVBO(GLuint AttribLocation);
 	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
 
+	bool pp;
 };
 

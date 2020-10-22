@@ -220,7 +220,8 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     //write NextPos to VBO
     //test position
     glm::vec3 testPos = glm::vec3(u, w, v);
-    writeToVBO(testPos, readBuff, x, y, fxVar.OffstPos);
+    writeToVBO(testPos, writeBuff, x, y, fxVar.OffstPos);
+    //writeToVBO(posRead, readBuff, x, y, fxVar.OffstPos);
     
   
 

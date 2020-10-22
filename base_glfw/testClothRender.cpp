@@ -15,6 +15,8 @@ testClothRender::testClothRender()
 	VBOStrideInFLoat = 0;
 
 	indexBuffSize = 0;
+
+	pp = false;
 }
 
 
@@ -187,10 +189,11 @@ void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	checkCudaErrors(cudaGraphicsMapResources(1, &CudaVboRes2, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr2, &num_bytes2, CudaVboRes2));
 
-
-
-	//call launchKernel here
-	Cloth_Launch_Kernel(d_testOutPtr2, d_testOutPtr2, cloth_width, cloth_height, VBOStrideInFLoat);
+	//ping pong
+	Cloth_Launch_Kernel(!pp ? d_testOutPtr1: d_testOutPtr2, !pp? d_testOutPtr2 : d_testOutPtr1,
+		cloth_width, cloth_height, VBOStrideInFLoat);
+	
+	pp = !pp;
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes1, 0));
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes2, 0));
@@ -203,7 +206,8 @@ void testClothRender::DrawCloth() {
 	//element draw
 	glEnable(GL_PRIMITIVE_RESTART);
 	glPrimitiveRestartIndex(RestartInd);
-	glBindVertexArray(cudaVAO2);
+	//draw the write buffer
+	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
 
 	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);

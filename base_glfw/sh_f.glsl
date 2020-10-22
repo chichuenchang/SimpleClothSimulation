@@ -24,6 +24,6 @@ void main() {
 
 	outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f);
 
-	outCol = vec4(vsOut_pcol, 1.0f);
 	outCol = vec4(vsOut_normal, 1.0f);
+	outCol = vec4(vsOut_pcol, 1.0f);
 }
