@@ -21,11 +21,12 @@ float GetDeltaT(float& curT, float& lasT);
 
 struct ClothConstant {
 
-	float m;
-	float G;
+	float M;
+	float g;
 	float k;
 	float rLen;	//initial length
 	glm::vec3 Fw; //wind
+	float a;
 	float stp; //time step
 	
 	float dt; //delta time each frame
@@ -43,6 +44,7 @@ struct FixedClothConstant {
 	unsigned int OffstPos;
 	unsigned int OffstNm;
 	unsigned int OffstCol;
+	glm::vec3 initVel;
 };
 
 

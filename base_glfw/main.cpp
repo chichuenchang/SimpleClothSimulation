@@ -32,8 +32,8 @@ const unsigned int clothWidth = 512;
 const unsigned int clothHeight = 1024;
 
 //constants passed to cuda
-ClothConstant clothConst;
-FixedClothConstant fxConst;
+ClothConstant cVar;
+FixedClothConstant fxVar;
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -101,7 +101,7 @@ int main() {
 	InitGL();
 
 	GLuint attribLoc = 8;
-	cloth.initCloth(clothWidth, clothHeight, attribLoc, clothConst, fxConst);
+	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 	
 	//delta time
 	float lastT = 0.0f, currT =0.0f;
@@ -116,16 +116,15 @@ int main() {
 	
 		PassUniform();
 		
-		clothConst.dt = GetDeltaT(currT, lastT);
-		clothConst.time = currT;
-		std::cout << "currT = " << currT << std::endl;
+		cVar.dt = GetDeltaT(currT, lastT);
+		cVar.time = currT;
 		
-		cloth.CudaUpdateCloth(clothConst);
+		cloth.CudaUpdateCloth(cVar);
 		assert(glGetError() == GL_NO_ERROR);
 		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);
 
-		drawGui(clear_color, show_demo_window, &clothConst);
+		drawGui(clear_color, show_demo_window, &cVar);
 
 		glUseProgram(0);
 		glfwSwapBuffers(window);

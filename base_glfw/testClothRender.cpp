@@ -43,8 +43,6 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 	// create buffer object
 	glGenBuffers(1, &cudaVBO);
 	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO);
-
-	// initialize buffer object
 	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid.data(), GL_DYNAMIC_DRAW);
 
 	// register this buffer object with CUDA
@@ -83,11 +81,12 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 }
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
-	clothConst.m = 0.1f;
-	clothConst.G = -9.8f;
+	clothConst.M = 0.1f;
+	clothConst.g = -9.8f;
 	clothConst.k = 0.01f;
 	clothConst.rLen = 0.02f;
 	clothConst.Fw = glm::vec3(0.0f);
+	clothConst.a = 0.001f;
 	clothConst.stp = 0.001f;
 	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
@@ -100,6 +99,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstPos = 0; 
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
+	fxClothConst.initVel = glm::vec3(0.0f);
 }
 
 
@@ -126,8 +126,11 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 
 void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes, cudaVBO, cudaGraphicsMapFlagsWriteDiscard));
 	updateClothConst(&in_clothConst);
 	
+
+
 	//std::cout << "value float = " << valuePass.in_testFloat << std::endl;
 
 	float* d_testOutPtr;
@@ -139,6 +142,9 @@ void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	Cloth_Launch_Kernel(d_testOutPtr, cloth_width, cloth_height, VBOStrideInFLoat);
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes, 0));
+
+
+
 }
 
 void testClothRender::DrawCloth() {
