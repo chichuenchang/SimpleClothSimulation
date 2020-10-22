@@ -1,4 +1,5 @@
 #include "testClothRender.h"
+#include "util.hpp"
 
 extern "C" {//force opengl run with nvidia card
 	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
@@ -19,14 +20,18 @@ glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
 //time
 float time;
+
 //shader ID
 GLuint shaderProgram;
 
 //cloth object
 //ClothRender cloth;
 testClothRender cloth;
-const unsigned int clothWidth = 32;
-const unsigned int clothHeight = 64;
+const unsigned int clothWidth = 2048;
+const unsigned int clothHeight = 1024;
+
+//interact variable from gui
+float testflt = 0.123;
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -36,6 +41,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode);
 void cursorPosCallback(GLFWwindow* w, double xp, double yp);
 void framebufferSizeCallback(GLFWwindow* w, int width, int height);
 void initGLFW(GLFWwindow** win, int winWidth, int winHeight);
+void drawGui(GLfloat* clearCol, bool show_demo);
 /// /////////////////////////////////////////////////////////////////////////
 
 void ComputeTransform(glm::mat4 &returnTransform) {
@@ -50,18 +56,49 @@ void ComputeTransform(glm::mat4 &returnTransform) {
 	returnTransform = proj * view * trans * rot * scaler;
 }
 
-int main() {
-	//initialize
-	initGLFW(&window, width, height);
-	initOpenGL(window);
-	initGui(window);
-	//load shader
-	ReloadShader(shaderProgram);
+void PassVarToCuda() {
+
+	cloth.passVarToCudaConst(testflt);
+
+}
+
+void PassUniform() {
 	//uniform location
 	GLuint xform_uloc = 0;
 	GLuint time_uloc = 1;
 
-	//init mesh
+	//transformation
+	glm::mat4 transform;
+	ComputeTransform(transform);
+	
+	//pass the uniform  
+	glUniformMatrix4fv(xform_uloc, 1, GL_FALSE, glm::value_ptr(transform));
+	time = glfwGetTime();
+	glUniform1f(time_uloc, time);
+}
+
+void InitGL() {
+	initGLFW(&window, width, height);
+	initOpenGL(window);
+	initGui(window);
+	ReloadShader(shaderProgram);
+}
+
+void CleanUpGL() {
+	//gui clean up
+	ImGui_ImplOpenGL3_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+	ImGui::DestroyContext();
+	//glfw clean up
+	glfwDestroyWindow(window);
+	glfwTerminate();
+}
+
+int main() {
+	//unsigned int a = 0;
+	//unsigned int b = a - 1;
+	InitGL();
+
 	GLuint attribLoc = 8;
 	cloth.initCloth(clothWidth, clothHeight, attribLoc);
 
@@ -70,40 +107,31 @@ int main() {
 		glfwPollEvents();
 		glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-		//bind shader program
-		glUseProgram(shaderProgram);
-		////transform
-		glm::mat4 transform;
-		ComputeTransform(transform);
-		//pass the uniform  
-		glUniformMatrix4fv(xform_uloc, 1, GL_FALSE, glm::value_ptr(transform));
-		time = glfwGetTime();
-		glUniform1f(time_uloc, time);
 
-		//compute with kernel function
+		glUseProgram(shaderProgram);
+	
+		PassVarToCuda();
+		PassUniform();
+
 		cloth.CudaUpdateCloth(time);
 		assert(glGetError() == GL_NO_ERROR);
 
-		//draw call
 		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);
 
-		//draw imGui
 		drawGui(clear_color, show_demo_window);
-		//unbind shader
+
 		glUseProgram(0);
+
+
+
+
+
 		
 		glfwSwapBuffers(window);
 	}
 
-	//gui clean up
-	ImGui_ImplOpenGL3_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-	ImGui::DestroyContext();
-	//glfw clean up
-	glfwDestroyWindow(window);
-	glfwTerminate();
-
+	CleanUpGL();
 	return 0;
 }
 
@@ -111,7 +139,7 @@ int main() {
 //GLFW definition
 void scrollCallback(GLFWwindow* w, double x, double y) {
 	float offset = (y > 0) ? 0.1f : -0.1f;
-	camCoords.z = glm::clamp(camCoords.z + offset, -20.0f, 20.0f);
+	camCoords.z = glm::clamp(camCoords.z + offset, -50.0f, 20.0f);
 }
 
 void keyCallback(GLFWwindow* w, int key, int scancode, int action, int mode) {
@@ -177,4 +205,28 @@ void initGLFW(GLFWwindow** win, int winWidth, int winHeight) {
 	glfwSetCursorPosCallback(*win, cursorPosCallback);
 	glfwSetFramebufferSizeCallback(*win, framebufferSizeCallback);
 	glfwSetScrollCallback(*win, scrollCallback);
+}
+
+void drawGui(GLfloat* clearCol, bool show_demo) {
+	ImGui_ImplOpenGL3_NewFrame();
+	ImGui_ImplGlfw_NewFrame();
+	ImGui::NewFrame();
+	//show demo window
+	if (show_demo) ImGui::ShowDemoWindow(&show_demo);
+
+	static int counter = 0;
+	{
+		ImGui::Begin("JC Zheng");                          // Create a window called "Hello, world!" and append into it.
+
+		ImGui::ColorEdit3("clear color", clearCol); // Edit 3 floats representing a color
+
+		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
+
+
+		ImGui::SliderFloat("test slider float", &testflt, 0.0f, 1.0f, "test float = %.3f");
+
+		ImGui::End();
+	}
+	ImGui::Render();
+	ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 }

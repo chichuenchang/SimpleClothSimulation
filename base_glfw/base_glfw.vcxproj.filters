@@ -15,9 +15,6 @@
     <Filter Include="Source Files\shaders">
       <UniqueIdentifier>{47a9cf9d-5480-4fef-ba91-5c71dc847433}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Source Files\Archived">
-      <UniqueIdentifier>{91aa73a7-0e80-43a5-adbf-116d32933e2c}</UniqueIdentifier>
-    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">

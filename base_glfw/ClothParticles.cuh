@@ -22,8 +22,6 @@ class ClothParticles {
 public:
 	ClothParticles();
 
-
-
 private:
 	glm::vec3 pos;
 	glm::vec3 vel;

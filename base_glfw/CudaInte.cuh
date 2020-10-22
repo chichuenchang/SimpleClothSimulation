@@ -17,6 +17,16 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtc/type_ptr.hpp>
 
-void test_launch_kernel(float* pos, unsigned int mesh_width,
+
+struct passVar {
+
+	float in_testFloat;
+
+};
+
+void Cloth_Launch_Kernel(float* pos, unsigned int mesh_width,
 	unsigned int mesh_height, float time, unsigned int vboStridInFloat);
 
+void CheckCudaErr(const char* msg);
+
+void copyConstMem(passVar *in_passVar);
