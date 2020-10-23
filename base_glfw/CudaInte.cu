@@ -11,11 +11,9 @@ FixedClothConstant fxVar;
 /// <summary>
 /// /????????????????????????????????
 /// </summary>
-__constant__
-glm::vec3 vel;
-__constant__
-glm::vec3 lastPos;
 
+__device__
+float curr, last;
 
 void CheckCudaErr(const char* msg)
 {
@@ -39,8 +37,7 @@ void copyFixClothConst(FixedClothConstant* in_fxConst) {
     cudaMemcpyToSymbol(fxVar, in_fxConst, sizeof(FixedClothConstant));
     CheckCudaErr("fixed constant memory copy fail");
 
-    cudaMemcpyToSymbol(vel, &in_fxConst->initVel, sizeof(glm::vec3));
-    CheckCudaErr("fixed constant memory copy fail");
+   
 }
 
 __device__
@@ -69,7 +66,7 @@ float length(glm::vec3 a, glm::vec3 b) {
 }
 
 __device__//normal is here also
-glm::vec3 computeInnerForce(float* vboPtr, unsigned int x, unsigned int y) {
+glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x, unsigned int y) {
     //                |y-
     //                |
     //                |
@@ -80,78 +77,174 @@ glm::vec3 computeInnerForce(float* vboPtr, unsigned int x, unsigned int y) {
     
     glm::vec3 pos, posL, posR, posU, posD, posLU, posLD, posRU, posRD, posL2,
         posR2, posU2, posD2;
-    pos = readFromVBO(vboPtr, x, y, fxVar.OffstPos);
+    pos = readFromVBO(readBuff, x, y, fxVar.OffstPos);
+
     //if neighbor point out of bound, neighbor point = center point
     //structure neighbor
-    if ((x) < 1) { posL = pos; }
-    else { posL = readFromVBO(vboPtr, x - 1, y + 0, fxVar.OffstPos); }
-    if ((x + 1) > fxVar.width - 1) { posR = pos; }
-    else { posR = readFromVBO(vboPtr, x + 1, y + 0, fxVar.OffstPos); }
-    if ((y) < 1) { posU = pos; }
-    else { posU = readFromVBO(vboPtr, x + 0, y - 1, fxVar.OffstPos); }
-    if ((y + 1) > fxVar.height - 1) { posD = pos; }
-    else { posD = readFromVBO(vboPtr, x + 0, y + 1, fxVar.OffstPos); }
-    //shear neighbor
-    if ((x) < 1 || (y) < 1) { posLU = pos; }
-    else { posLU = readFromVBO(vboPtr, x - 1, y - 1, fxVar.OffstPos); }
-    if ((x) < 1 || (y + 1) > fxVar.height - 1) { posLD = pos; }
-    else { posLD = readFromVBO(vboPtr, x - 1, y + 1, fxVar.OffstPos); }
-    if ((x + 1) > fxVar.width - 1 || (y) < 1) { posRU = pos; }
-    else { posRU = readFromVBO(vboPtr, x + 1, y - 1, fxVar.OffstPos); }
-    if ((x + 1) > fxVar.width - 1 || (y + 1) > fxVar.height - 1) { posRD = pos; }
-    else { posRD = readFromVBO(vboPtr, x + 1, y + 1, fxVar.OffstPos); }
-    //bend neighbor
-    if ((x) < 2) { posL2 = pos; }
-    else { posL2 = readFromVBO(vboPtr, x - 2, y + 0, fxVar.OffstPos); }
-    if ((x + 2) > fxVar.width - 1) { posR2 = pos; }
-    else { posR2 = readFromVBO(vboPtr, x + 2, y + 0, fxVar.OffstPos); }
-    if ((y) < 2) { posU2 = pos; }
-    else { posU2 = readFromVBO(vboPtr, x + 0, y - 2, fxVar.OffstPos); }
-    if ((y + 2) > fxVar.height - 1) { posD2 = pos; }
-    else { posD2 = readFromVBO(vboPtr, x + 0, y + 2, fxVar.OffstPos); }
+
+    //if ((x) < 1) { posL = pos; }
+    //else { posL = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos); }
+    //
+    //if ((x + 1) > fxVar.width - 1) { posR = pos; }
+    //else { posR = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos); }
+    //
+    //if ((y) < 1) { posU = pos; }
+    //else { posU = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos); }
+    //
+    //if ((y + 1) > fxVar.height - 1) { posD = pos; }
+    //else { posD = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos); }
+    ////shear neighbor
+    //if ((x) < 1 || (y) < 1) { posLU = pos; }
+    //else { posLU = readFromVBO(readBuff, x - 1, y - 1, fxVar.OffstPos); }
+    //if ((x) < 1 || (y + 1) > fxVar.height - 1) { posLD = pos; }
+    //else { posLD = readFromVBO(readBuff, x - 1, y + 1, fxVar.OffstPos); }
+    //if ((x + 1) > fxVar.width - 1 || (y) < 1) { posRU = pos; }
+    //else { posRU = readFromVBO(readBuff, x + 1, y - 1, fxVar.OffstPos); }
+    //if ((x + 1) > fxVar.width - 1 || (y + 1) > fxVar.height - 1) { posRD = pos; }
+    //else { posRD = readFromVBO(readBuff, x + 1, y + 1, fxVar.OffstPos); }
+    ////bend neighbor
+    //if ((x) < 2) { posL2 = pos; }
+    //else { posL2 = readFromVBO(readBuff, x - 2, y + 0, fxVar.OffstPos); }
+    //if ((x + 2) > fxVar.width - 1) { posR2 = pos; }
+    //else { posR2 = readFromVBO(readBuff, x + 2, y + 0, fxVar.OffstPos); }
+    //if ((y) < 2) { posU2 = pos; }
+    //else { posU2 = readFromVBO(readBuff, x + 0, y - 2, fxVar.OffstPos); }
+    //if ((y + 2) > fxVar.height - 1) { posD2 = pos; }
+    //else { posD2 = readFromVBO(readBuff, x + 0, y + 2, fxVar.OffstPos); }
+    glm::vec3 innF = glm::vec3(0.0f);
 
     //structure
-    glm::vec3 f_L = glm::normalize(posL - pos) * cVar.k * (glm::length(posL - pos) - cVar.rLen);
-    glm::vec3 f_R = glm::normalize(posR - pos) * cVar.k * (glm::length(posR - pos) - cVar.rLen);
-    glm::vec3 f_U = glm::normalize(posU - pos) * cVar.k * (glm::length(posU - pos) - cVar.rLen);
-    glm::vec3 f_D = glm::normalize(posD - pos) * cVar.k * (glm::length(posD - pos) - cVar.rLen);
-    //shear
-    glm::vec3 f_LU = glm::normalize(posLU - pos) * cVar.k * (glm::length(posLU - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_LD = glm::normalize(posLD - pos) * cVar.k * (glm::length(posLD - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_RU = glm::normalize(posRU - pos) * cVar.k * (glm::length(posRU - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_RD = glm::normalize(posRD - pos) * cVar.k * (glm::length(posRD - pos) - cVar.rLen * 1.41421356237f);
-    //bend
-    glm::vec3 f_L2 = glm::normalize(posL2 - pos) * cVar.k * (glm::length(posL2 - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_R2 = glm::normalize(posR2 - pos) * cVar.k * (glm::length(posR2 - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_U2 = glm::normalize(posU2 - pos) * cVar.k * (glm::length(posU2 - pos) - cVar.rLen * 1.41421356237f);
-    glm::vec3 f_D2 = glm::normalize(posD2 - pos) * cVar.k * (glm::length(posD2 - pos) - cVar.rLen * 1.41421356237f);
+    if ((x) < 1) { innF += glm::vec3(0.0); }
+    else { 
+        posL = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos); 
+        innF += glm::normalize((posL - pos)) * cVar.k * ((glm::length(posL - pos)) - cVar.rLen);
+    }
+
+    if ((x + 1) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posR = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos); 
+        innF += glm::normalize(posR - pos) * cVar.k * ((glm::length(posR - pos)) - cVar.rLen);
+    }
+
+    if ((y) < 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posU = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos);
+        innF += glm::normalize((posU - pos)) * cVar.k * ((glm::length(posU - pos)) - cVar.rLen);
+    }
+
+    if ((y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posD = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos); 
+        innF += glm::normalize((posD - pos)) * cVar.k * ((glm::length(posD - pos)) - cVar.rLen);
+    }
+
+    //shear neighbor
+    if ((x) < 1 || (y) < 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posLU = readFromVBO(readBuff, x - 1, y - 1, fxVar.OffstPos); 
+        innF += glm::normalize(posLU - pos) * cVar.k * (glm::length(posLU - pos) - cVar.rLen * 1.41421356237f);
+    }
+    
+    if ((x) < 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posLD = readFromVBO(readBuff, x - 1, y + 1, fxVar.OffstPos); 
+        innF += glm::normalize(posLD - pos) * cVar.k * (glm::length(posLD - pos) - cVar.rLen * 1.41421356237f);
+
+    }
+    if ((x + 1) > fxVar.width - 1 || (y) < 1) { innF += glm::vec3(0.0f); }
+    else {
+        posRU = readFromVBO(readBuff, x + 1, y - 1, fxVar.OffstPos); 
+        innF += glm::normalize(posRU - pos) * cVar.k * (glm::length(posRU - pos) - cVar.rLen * 1.41421356237f);
+
+    }
+    if ((x + 1) > fxVar.width - 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posRD = readFromVBO(readBuff, x + 1, y + 1, fxVar.OffstPos); 
+        innF += glm::normalize(posRD - pos) * cVar.k * (glm::length(posRD - pos) - cVar.rLen * 1.41421356237f);
+    
+    }
+    //bend neighbor
+    if ((x) < 2) { innF += glm::vec3(0.0f); }
+    else {
+        posL2 = readFromVBO(readBuff, x - 2, y + 0, fxVar.OffstPos); 
+        innF += glm::normalize(posL2 - pos) * cVar.k * (glm::length(posL2 - pos) - cVar.rLen * 2.0f);
+
+    }
+    if ((x + 2) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posR2 = readFromVBO(readBuff, x + 2, y + 0, fxVar.OffstPos); 
+        innF += glm::normalize(posR2 - pos) * cVar.k * (glm::length(posR2 - pos) - cVar.rLen * 2.0f);
+
+    }
+    if ((y) < 2) { innF += glm::vec3(0.0f); }
+    else { 
+        posU2 = readFromVBO(readBuff, x + 0, y - 2, fxVar.OffstPos); 
+        innF += glm::normalize(posU2 - pos) * cVar.k * (glm::length(posU2 - pos) - cVar.rLen * 2.0f);
+
+    }
+    if ((y + 2) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
+    else { 
+        posD2 = readFromVBO(readBuff, x + 0, y + 2, fxVar.OffstPos); 
+        innF += glm::normalize(posD2 - pos) * cVar.k * (glm::length(posD2 - pos) - cVar.rLen * 2.0f);
+
+    }
+
+
+    //structure
+    //innF += (posL - pos) * cVar.k * ((glm::length(posL - pos)) - cVar.rLen);
+    //innF += (posR - pos) * cVar.k * ((glm::length(posR - pos)) - cVar.rLen);
+    //innF += (posU - pos) * cVar.k * ((glm::length(posU - pos)) - cVar.rLen);
+    //innF += (posD - pos) * cVar.k * ((glm::length(posD - pos)) - cVar.rLen);
+    //
+    //innF += (posLU - pos) * cVar.k * (glm::length(posLU - pos) - cVar.rLen * 1.41421356237f);
+    //innF += (posLD - pos) * cVar.k * (glm::length(posLD - pos) - cVar.rLen * 1.41421356237f);
+    //innF += (posRU - pos) * cVar.k * (glm::length(posRU - pos) - cVar.rLen * 1.41421356237f);
+    //innF += (posRD - pos) * cVar.k * (glm::length(posRD - pos) - cVar.rLen * 1.41421356237f);
+    //
+    //innF += (posL2 - pos) * cVar.k * (glm::length(posL2 - pos) - cVar.rLen * 2.0f);
+    //innF += (posR2 - pos) * cVar.k * (glm::length(posR2 - pos) - cVar.rLen * 2.0f);
+    //innF += (posU2 - pos) * cVar.k * (glm::length(posU2 - pos) - cVar.rLen * 2.0f);
+    //innF += (posD2 - pos) * cVar.k * (glm::length(posD2 - pos) - cVar.rLen * 2.0f);
+    
     //might as well compute the normal
     glm::vec3 normal = glm::normalize(glm::cross((posR - posL), (posU - posD)));
     
-    //pass const test 
+    glm::vec3 col = glm::vec3(glm::length(innF), 0.0f, 1.0f - glm::length(innF));
 
-  
+    writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
+    writeToVBO(normal, writeBuff, x, y, fxVar.OffstNm);
 
     float a = cVar.in_testFloat;
-    //glm::vec3 normal = glm::vec3(0.0f, a, 0.0f);
 
-    writeToVBO(normal, vboPtr, x, y, fxVar.OffstNm);
+    glm::vec3 testcol = glm::vec3(0.0f, a, a);
+    if (x == 0 && y == 0) {
+
+        curr = a;
+
+        printf(" d = %f \n", glm::length(innF));
+        last = curr;
+
+    }
 
 
 
-    return f_L + f_R + f_U + f_D + f_LU + f_LD + f_RU + f_RD + f_L2 + f_R2 + f_U2 + f_D2;
+
+    return innF;
 }
 
 __device__ 
-glm::vec3 computeForceNet(float* vboPtr, unsigned int ptclInd_x, unsigned int ptclInd_y) {
+glm::vec3 computeForceNet(float* readBuff, float* writeBuff, unsigned int x, unsigned int y) {
     
     
-    
-    glm::vec3 inForce = computeInnerForce(vboPtr, ptclInd_x, ptclInd_y);
+    glm::vec3 innF = computeInnerForce(readBuff, writeBuff, x, y);
+
+    glm::vec3 vel = readFromVBO(readBuff, x, y, fxVar.OffstVel);
 
 
-    glm::vec3 netF = cVar.M * glm::vec3(0.0f, cVar.g, 0.0f) + cVar.Fw +
-        (-cVar.a) * glm::normalize(vel) * (glm::length(vel)) * (glm::length(vel)) - inForce;
+    //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
+    glm::vec3 netF = cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)  /*+0.0f*cVar.Fw 
+        + 0.0f* (-cVar.a) * glm::normalize(vel) * (glm::length(vel)) * (glm::length(vel))
+        + */+ innF/* - 0.0f*cVar.Dp * vel*/;
 
 
     return netF;
@@ -170,22 +263,20 @@ glm::vec3 RungeKutta4th(glm::vec3 pos, glm::vec3 acc, float dt) {
 __device__
 glm::vec3 Verlet(glm::vec3 pos, glm::vec3 oldPos, glm::vec3 acc, float dt) {
 
-    
-
-    return glm::vec3(99999999999);
+    return 2.0f * pos - oldPos + acc * dt * dt;
 }
 
-__device__
-glm::vec3 explicitIntegration(glm::vec3 pos, glm::vec3 nForce, float dt) {
-
-    //call RK4 or Verlet
-    glm::vec3 acc = nForce / cVar.M;
-
-    
-
-    return RungeKutta4th(pos, acc, dt);
-
-}
+//__device__
+//glm::vec3 explicitIntegration(glm::vec3 pos, glm::vec3 nForce, float dt) {
+//
+//    //call RK4 or Verlet
+//    glm::vec3 acc = nForce / cVar.M;
+//
+//    
+//
+//    return RungeKutta4th(pos, acc, dt);
+//
+//}
 
 
 __global__ 
@@ -201,26 +292,48 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     //writeToVBO(normal, d_ptrVBO, x, y, OffsetNormal);
     
     
-    //**test read function
-    glm::vec3 posRead = readFromVBO(readBuff, x, y, fxVar.OffstPos);
+    //get current position from read buffer
+    glm::vec3 pos = readFromVBO(readBuff, x, y, fxVar.OffstPos);
+    //get old position from the write buffer
+    glm::vec3 lastPos = readFromVBO(writeBuff, x, y, fxVar.OffstPos);
 
+    glm::vec3 ForceNet = computeForceNet(readBuff, writeBuff, x, y);
+
+    glm::vec3 Acc = ForceNet / cVar.M;
+    //glm::vec3 Acc = glm::vec3(1.0f);
+    glm::vec3 lastV = readFromVBO(readBuff, x, y, fxVar.OffstVel);
+    glm::vec3 newV = lastV + Acc * cVar.dt;
+    writeToVBO(newV, writeBuff, x, y, fxVar.OffstVel);
+
+
+    glm::vec3 nextPos;
+    if (x ==0 ) {
+
+        nextPos = pos;
+
+    }
+    else {
+
+        nextPos = Verlet(pos, lastPos, Acc, cVar.stp);
+
+    }
+
+
+    
+
+
+    ///////////////////////////////////
     //test output
     float u = x /100.0f;
     float v = y /100.0f;
     float freq = 0.5f;
     float w = glm::sin(u  + cVar.time * 1.3f * freq) * glm::cos(v + cVar.time * 1.7f * freq) * 0.5f;
 
-    glm::vec3 ForceNet = computeForceNet(readBuff, x, y);
-    glm::vec3 NextPos = explicitIntegration(posRead, ForceNet, cVar.stp * cVar.dt);
-
-    
-
-
 
     //write NextPos to VBO
     //test position
-    glm::vec3 testPos = glm::vec3(u, w, v);
-    writeToVBO(testPos, writeBuff, x, y, fxVar.OffstPos);
+    //glm::vec3 testPos = glm::vec3(u, w, v);
+    writeToVBO(nextPos, writeBuff, x, y, fxVar.OffstPos);
     //writeToVBO(posRead, readBuff, x, y, fxVar.OffstPos);
     
   

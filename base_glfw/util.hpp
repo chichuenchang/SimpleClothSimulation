@@ -32,6 +32,11 @@ struct ClothConstant {
 	float dt; //delta time each frame
 	float time; //system time
 
+	float MinL;
+	float MaxL;
+	float Dp;
+
+
 	float in_testFloat;
 
 };
@@ -44,7 +49,8 @@ struct FixedClothConstant {
 	unsigned int OffstPos;
 	unsigned int OffstNm;
 	unsigned int OffstCol;
-	glm::vec3 initVel;
+	unsigned int OffstVel;
+
 };
 
 

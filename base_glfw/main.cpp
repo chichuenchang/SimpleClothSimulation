@@ -118,7 +118,9 @@ int main() {
 		
 		cVar.dt = GetDeltaT(currT, lastT);
 		cVar.time = currT;
-		
+		//fw from the paper
+		cVar.Fw = 0.0f*glm::vec3(glm::sin(cVar.a * currT), glm::cos(cVar.a * 1.7 * currT), glm::sin(7 * cVar.a * 1.7 * currT));
+
 		cloth.CudaUpdateCloth(cVar);
 		assert(glGetError() == GL_NO_ERROR);
 		cloth.DrawCloth();

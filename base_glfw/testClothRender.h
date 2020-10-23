@@ -24,7 +24,7 @@ private:
 	GLuint cudaVBO2;
 	cudaGraphicsResource* CudaVboRes1;
 	cudaGraphicsResource* CudaVboRes2;
-	unsigned int VBOStrideInFLoat;
+	unsigned int VBOStrideInFloat;
 	//signed int sizeOfVerts;
 	
 	//ibo

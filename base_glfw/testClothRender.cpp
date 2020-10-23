@@ -8,11 +8,12 @@ testClothRender::testClothRender()
 	cloth_height = 0;
 
 	cudaVAO1 = -1;
+	cudaVAO2 = -1;
 	cudaVBO1 = -1;
 	cudaVBO2 = -1;
 	CudaVboRes1 = nullptr;
 	CudaVboRes2 = nullptr;
-	VBOStrideInFLoat = 0;
+	VBOStrideInFloat = 0;
 
 	indexBuffSize = 0;
 
@@ -29,28 +30,32 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 		glm::vec2 texCrd;
 		glm::vec3 normal;
 		glm::vec3 col;
+		glm::vec3 vel;
 	};
 	std::vector<testVert> testGrid;
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
 			testGrid.push_back({glm::vec3((float)i/ 100.0f, 0.0f, (float)j/100.0f ), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
-								glm::vec3(1.0f, 0.0f, 1.0f),//megenta
-								glm::vec3(1.0f, 0.0f, 1.0f) });	//point color megenta	
+								glm::vec3(1.0f, 1.0f, 0.0f),//megenta
+								glm::vec3(1.0f, 0.0f, 1.0f),//p color megenta
+								glm::vec3(0.0f)});	//for kernel to write velocity
+								
 		}
 	}
 
 	std::vector<testVert> testGrid2;
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
-			testGrid2.push_back({ glm::vec3((float)i / 100.0f, 2.0f, (float)j / 100.0f), //pos
+			testGrid2.push_back({ glm::vec3((float)i / 100.0f, 0.0f, (float)j / 100.0f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(0.0f, 1.0f, 1.0f),//
-								glm::vec3(0.0f, 1.0f, 1.0f) });	//point color	
+								glm::vec3(0.0f, 1.0f, 1.0f),//point color	
+								glm::vec3(0.0f) });	
 		}
 	}
 
-	VBOStrideInFLoat = sizeof(testVert) / sizeof(float);
+	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
 
 	//gen VAO
 	glGenVertexArrays(1, &cudaVAO1);
@@ -128,25 +133,29 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 }
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
-	clothConst.M = 0.1f;
-	clothConst.g = -9.8f;
-	clothConst.k = 0.01f;
+	clothConst.M = 0.01f;
+	clothConst.g = -5.0f;
+	clothConst.k = 1.0f;
 	clothConst.rLen = 0.02f;
 	clothConst.Fw = glm::vec3(0.0f);
 	clothConst.a = 0.001f;
-	clothConst.stp = 0.001f;
-	clothConst.dt = 0.000005f;
+	clothConst.stp = 0.008f;
+	clothConst.dt = 0.00001f;
 	clothConst.time = 0.0f;
+	clothConst.MinL = 0.015f;
+	clothConst.MaxL = 0.025f;
+	clothConst.Dp = 0.002f;
 	clothConst.in_testFloat = 0.654f;
 
 	fxClothConst.width = cloth_width;
 	fxClothConst.height = cloth_height;
-	fxClothConst.vboStrdFlt = VBOStrideInFLoat;
+	fxClothConst.vboStrdFlt = VBOStrideInFloat;
 	//by the layout in vbo
 	fxClothConst.OffstPos = 0; 
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
-	fxClothConst.initVel = glm::vec3(0.0f);
+	fxClothConst.OffstVel = 11;
+	
 }
 
 
@@ -169,9 +178,6 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 
 }
 
-
-
-
 void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	
 	updateClothConst(&in_clothConst);
@@ -191,7 +197,7 @@ void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 
 	//ping pong
 	Cloth_Launch_Kernel(!pp ? d_testOutPtr1: d_testOutPtr2, !pp? d_testOutPtr2 : d_testOutPtr1,
-		cloth_width, cloth_height, VBOStrideInFLoat);
+		cloth_width, cloth_height, VBOStrideInFloat);
 	
 	pp = !pp;
 
@@ -209,7 +215,7 @@ void testClothRender::DrawCloth() {
 	//draw the write buffer
 	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
