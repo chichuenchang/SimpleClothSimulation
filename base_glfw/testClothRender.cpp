@@ -20,41 +20,36 @@ testClothRender::testClothRender()
 	pp = false;
 }
 
+void testClothRender::ResetVBO() {
+	testGrid.clear();
+	testGrid2.clear();
 
-void testClothRender::initVBO(GLuint AttribLocation) {
-	/// <summary>
-	/// ///////////////////////////////////////////
-	/// BUFFER#1
-	struct testVert {
-		glm::vec3 pos;
-		glm::vec2 texCrd;
-		glm::vec3 normal;
-		glm::vec3 col;
-		glm::vec3 vel;
-	};
-	std::vector<testVert> testGrid;
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
-			testGrid.push_back({glm::vec3((float)i/ 100.0f, 0.0f, (float)j/100.0f ), //pos
+			testGrid.push_back({glm::vec3((float)i / 10.0f, 0.0f, (float)j / 10.0f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(1.0f, 1.0f, 0.0f),//megenta
 								glm::vec3(1.0f, 0.0f, 1.0f),//p color megenta
-								glm::vec3(0.0f)});	//for kernel to write velocity
-								
+								glm::vec3(0.0f) });	//for kernel to write velocity
+
 		}
 	}
 
-	std::vector<testVert> testGrid2;
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
-			testGrid2.push_back({ glm::vec3((float)i / 100.0f, 0.0f, (float)j / 100.0f), //pos
+			testGrid2.push_back({ glm::vec3((float)i / 10.0f, 0.0f, (float)j / 10.0f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(0.0f, 1.0f, 1.0f),//
 								glm::vec3(0.0f, 1.0f, 1.0f),//point color	
-								glm::vec3(0.0f) });	
+								glm::vec3(0.0f) });
 		}
 	}
 
+}
+
+void testClothRender::initVBO(GLuint AttribLocation) {
+
+	ResetVBO();
 	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
 
 	//gen VAO
@@ -76,7 +71,6 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 	glVertexAttribPointer(AttribLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
 	glEnableVertexAttribArray(AttribLocation + 3);//layout location = attribLoc in vs
 	glVertexAttribPointer(AttribLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
-
 
 	//fill IBO
 	std::vector<unsigned int> testInd;
@@ -134,17 +128,18 @@ void testClothRender::initVBO(GLuint AttribLocation) {
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
 	clothConst.M = 0.01f;
-	clothConst.g = -5.0f;
-	clothConst.k = 1.0f;
-	clothConst.rLen = 0.02f;
+	clothConst.g = -22.0f;
+	clothConst.k = 115.0f;
+	clothConst.rLen = 0.1f;
+
 	clothConst.Fw = glm::vec3(0.0f);
-	clothConst.a = 0.001f;
-	clothConst.stp = 0.008f;
-	clothConst.dt = 0.00001f;
+	clothConst.a = 0.05f;
+	clothConst.stp = 0.004f;
+	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
 	clothConst.MinL = 0.015f;
 	clothConst.MaxL = 0.025f;
-	clothConst.Dp = 0.002f;
+	clothConst.Dp = 0.05f;
 	clothConst.in_testFloat = 0.654f;
 
 	fxClothConst.width = cloth_width;
@@ -158,8 +153,6 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	
 }
 
-
-
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
 	GLuint attribLoc, ClothConstant& clthConst, FixedClothConstant& fxConst) {
@@ -172,16 +165,13 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	
 	copyFixClothConst(&fxConst);
 
-
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes1, cudaVBO1, cudaGraphicsMapFlagsNone));
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsWriteDiscard));
-
 }
 
 void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	
 	updateClothConst(&in_clothConst);
-
 
 	//std::cout << "value float = " << valuePass.in_testFloat << std::endl;
 
@@ -204,8 +194,6 @@ void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes1, 0));
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes2, 0));
 
-
-
 }
 
 void testClothRender::DrawCloth() {
@@ -215,7 +203,7 @@ void testClothRender::DrawCloth() {
 	//draw the write buffer
 	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 

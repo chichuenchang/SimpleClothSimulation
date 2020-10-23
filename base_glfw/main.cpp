@@ -13,9 +13,11 @@ GLFWwindow* window = nullptr;
 GLfloat clear_color[3] = { 0.05f, 0.1f, 0.1f };
 int width = 1600, height = 1600;
 //GUI
-bool show_demo_window = false;
+bool show_demo_window = true;
 // camera
 bool camRot = false;
+bool pan = false;
+glm::vec2 panCam = glm::vec2(0.0f);
 glm::vec3 camCoords = glm::vec3(0.0, 0.0, 1.0);
 glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
@@ -28,8 +30,8 @@ GLuint shaderProgram;
 //cloth object
 //ClothRender cloth;
 testClothRender cloth;
-const unsigned int clothWidth = 512;
-const unsigned int clothHeight = 1024;
+const unsigned int clothWidth = 32;
+const unsigned int clothHeight = 64;
 
 //constants passed to cuda
 ClothConstant cVar;
@@ -50,8 +52,9 @@ void ComputeTransform(glm::mat4 &returnTransform) {
 
 	float aspect = (float)width / (float)height;
 	glm::mat4 proj = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 30.0f), glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), { 0.0f, 0.0f, -camCoords.z });
+	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f), 
+		glm::vec3(0.0f, -0.1f , clothHeight *0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), { panCam.x, panCam.y, -camCoords.z });
 	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(camCoords.y), { 1.0f, 0.0f, 0.0f });
 	rot = glm::rotate(rot, glm::radians(camCoords.x), { 0.0f, 1.0f, 0.0f });
 	glm::mat4 scaler = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
@@ -119,7 +122,7 @@ int main() {
 		cVar.dt = GetDeltaT(currT, lastT);
 		cVar.time = currT;
 		//fw from the paper
-		cVar.Fw = 0.0f*glm::vec3(glm::sin(cVar.a * currT), glm::cos(cVar.a * 1.7 * currT), glm::sin(7 * cVar.a * 1.7 * currT));
+		cVar.Fw = 0.1f*glm::vec3(glm::sin(cVar.a * currT), glm::cos(cVar.a * 1.7 * currT), glm::sin(7 * cVar.a * 1.7 * currT));
 
 		cloth.CudaUpdateCloth(cVar);
 		assert(glGetError() == GL_NO_ERROR);
@@ -166,6 +169,20 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 	} if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
 		camRot = false;
 	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+		pan = true;
+		camOrigin = glm::vec2(camCoords);
+		double xpos, ypos; //has to be double, as is the argument type of glfwGetCursorPos();
+		glfwGetCursorPos(w, &xpos, &ypos);
+		mouseOrigin = glm::vec2(xpos, ypos);
+
+	}
+	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+		pan = false;
+
+	}
+
+
 }
 
 void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
@@ -181,6 +198,22 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 			camCoords.y = newAngle.y;
 		}
 	}
+	if (pan) {
+
+		float rotScale = std::fmin(width / 450.f, height / 270.f);
+		glm::vec2 mouseDelta = mouseOrigin - glm::vec2(xp, yp) ;
+		glm::vec2 newAngle = camOrigin + mouseDelta / rotScale;
+		//newAngle.y = glm::clamp(newAngle.y, -90.0f, 90.0f);
+		//while (newAngle.x > 180.0f) newAngle.x -= 360.0f;
+		//while (newAngle.y < -180.0f) newAngle.y += 360.0f;
+		if (glm::length(newAngle - glm::vec2(camCoords)) > std::numeric_limits<float>::epsilon()) {
+			panCam.x = -0.01f * newAngle.x;
+			panCam.y = 0.01f * newAngle.y;
+
+		}
+	}
+
+
 }
 
 void framebufferSizeCallback(GLFWwindow* w, int width, int height) {
@@ -223,8 +256,20 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-		ImGui::SliderFloat("test slider float", &clothConst->in_testFloat, 0.0f, 1.0f, "test float = %.3f");
+		ImGui::SliderFloat("Wind Strength", &clothConst->in_testFloat, 0.0f, 0.5f, "test float = %.3f");
 		
+		static int clicked = 0;
+		if (ImGui::Button("Button")) {
+
+			clicked++;
+			cloth.ResetVBO();
+
+		}
+		if (clicked & 1)
+		{
+			ImGui::SameLine();
+			ImGui::Text("Reload Cloth");
+		}
 
 
 

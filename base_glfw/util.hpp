@@ -25,6 +25,8 @@ struct ClothConstant {
 	float g;
 	float k;
 	float rLen;	//initial length
+
+
 	glm::vec3 Fw; //wind
 	float a;
 	float stp; //time step

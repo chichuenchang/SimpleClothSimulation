@@ -12,11 +12,22 @@ public:
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
 	void CudaUpdateCloth(ClothConstant clothConst);
 	void DrawCloth();
-
+	void ResetVBO();
 
 private:
 	unsigned int cloth_width;
 	unsigned int cloth_height;
+
+
+	struct testVert {
+		glm::vec3 pos;
+		glm::vec2 texCrd;
+		glm::vec3 normal;
+		glm::vec3 col;
+		glm::vec3 vel;
+	};
+	std::vector<testVert> testGrid;
+	std::vector<testVert> testGrid2;
 
 	GLuint cudaVAO1;
 	GLuint cudaVAO2;
