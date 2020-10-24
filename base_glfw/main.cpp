@@ -13,7 +13,7 @@ GLFWwindow* window = nullptr;
 GLfloat clear_color[3] = { 0.05f, 0.1f, 0.1f };
 int width = 1600, height = 1600;
 //GUI
-bool show_demo_window = true;
+bool show_demo_window = false;
 // camera
 bool camRot = false;
 bool pan = false;
@@ -29,6 +29,7 @@ GLuint shaderProgram;
 
 //cloth object
 //ClothRender cloth;
+GLuint attribLoc = 8;
 testClothRender cloth;
 const unsigned int clothWidth = 32;
 const unsigned int clothHeight = 64;
@@ -52,20 +53,14 @@ void ComputeTransform(glm::mat4 &returnTransform) {
 
 	float aspect = (float)width / (float)height;
 	glm::mat4 proj = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(0.0f, 0.0f, 10.0f), 
-		glm::vec3(0.0f, -0.1f , clothHeight *0.1f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 view = glm::lookAt(glm::vec3(5.0f, -1.0f * clothWidth * 0.06f, 10.0f),
+		glm::vec3(0.0f, -1.0f * clothWidth*0.06f , clothHeight *0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 	glm::mat4 trans = glm::translate(glm::mat4(1.0f), { panCam.x, panCam.y, -camCoords.z });
 	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(camCoords.y), { 1.0f, 0.0f, 0.0f });
 	rot = glm::rotate(rot, glm::radians(camCoords.x), { 0.0f, 1.0f, 0.0f });
 	glm::mat4 scaler = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
 	returnTransform = proj * view * trans * rot * scaler;
 }
-
-//void PassVarToCuda() {
-//
-//	cloth.passVarToCudaConst(testflt);
-//
-//}
 
 void PassUniform() {
 	//uniform location
@@ -103,7 +98,7 @@ int main() {
 
 	InitGL();
 
-	GLuint attribLoc = 8;
+	
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 	
 	//delta time
@@ -122,7 +117,8 @@ int main() {
 		cVar.dt = GetDeltaT(currT, lastT);
 		cVar.time = currT;
 		//fw from the paper
-		cVar.Fw = 0.1f*glm::vec3(glm::sin(cVar.a * currT), glm::cos(cVar.a * 1.7 * currT), glm::sin(7 * cVar.a * 1.7 * currT));
+		cVar.Fw = 0.4f*glm::vec3(glm::sin(cVar.a * 23.0f*currT), 
+			glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
 
 		cloth.CudaUpdateCloth(cVar);
 		assert(glGetError() == GL_NO_ERROR);
@@ -256,19 +252,19 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-		ImGui::SliderFloat("Wind Strength", &clothConst->in_testFloat, 0.0f, 0.5f, "test float = %.3f");
+		ImGui::SliderFloat("Wind Strength", &clothConst->in_testFloat, 0.0f, 3.0f, "test float = %.3f");
 		
 		static int clicked = 0;
-		if (ImGui::Button("Button")) {
+		if (ImGui::Button("Reload Cloth")) {
+			cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 
 			clicked++;
-			cloth.ResetVBO();
-
 		}
 		if (clicked & 1)
 		{
 			ImGui::SameLine();
 			ImGui::Text("Reload Cloth");
+			clicked = 0;
 		}
 
 

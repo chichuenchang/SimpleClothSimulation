@@ -12,7 +12,7 @@ public:
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
 	void CudaUpdateCloth(ClothConstant clothConst);
 	void DrawCloth();
-	void ResetVBO();
+	void ReloadCloth();
 
 private:
 	unsigned int cloth_width;
@@ -28,13 +28,17 @@ private:
 	};
 	std::vector<testVert> testGrid;
 	std::vector<testVert> testGrid2;
+	std::vector<unsigned int> IndexData;
 
 	GLuint cudaVAO1;
 	GLuint cudaVAO2;
 	GLuint cudaVBO1;
 	GLuint cudaVBO2;
+	GLuint AssignIBO;
+
 	cudaGraphicsResource* CudaVboRes1;
 	cudaGraphicsResource* CudaVboRes2;
+	GLuint inAttributeLocation;
 	unsigned int VBOStrideInFloat;
 	//signed int sizeOfVerts;
 	
@@ -42,9 +46,12 @@ private:
 	unsigned int indexBuffSize;
 	const int RestartInd = 9999999;
 
+	void fillBufferData();
 	void initVBO(GLuint AttribLocation);
 	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
+	void ResetClothBuffer();
 
 	bool pp;
+	bool resetClothFlag;
 };
 

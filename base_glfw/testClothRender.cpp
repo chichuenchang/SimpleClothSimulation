@@ -11,16 +11,80 @@ testClothRender::testClothRender()
 	cudaVAO2 = -1;
 	cudaVBO1 = -1;
 	cudaVBO2 = -1;
+	AssignIBO = -1;
 	CudaVboRes1 = nullptr;
 	CudaVboRes2 = nullptr;
+	inAttributeLocation = -1;
 	VBOStrideInFloat = 0;
 
 	indexBuffSize = 0;
 
 	pp = false;
+	resetClothFlag = false;
 }
 
-void testClothRender::ResetVBO() {
+void testClothRender::ReloadCloth() {
+
+	resetClothFlag = true;
+
+}
+
+void testClothRender::ResetClothBuffer() {
+	///////////////////////////////////////////////////////////
+	//VBO#1
+	glBindVertexArray(cudaVAO1);
+
+	// create buffer object
+	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO1);
+	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid.data(), GL_DYNAMIC_DRAW);
+
+	// register this buffer object with CUDA
+	glEnableVertexAttribArray(inAttributeLocation);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
+	glEnableVertexAttribArray(inAttributeLocation + 1);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
+	glEnableVertexAttribArray(inAttributeLocation + 2);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
+	glEnableVertexAttribArray(inAttributeLocation + 3);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
+
+
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexData.size() * sizeof(unsigned int), IndexData.data(), GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+
+	///////////////////////////////////////////////////////////
+	//VBO#2
+	glBindVertexArray(cudaVAO2);
+	// create buffer object
+	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO2);
+	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid.data(), GL_DYNAMIC_DRAW);
+
+	// register this buffer object with CUDA
+	glEnableVertexAttribArray(inAttributeLocation);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
+	glEnableVertexAttribArray(inAttributeLocation + 1);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
+	glEnableVertexAttribArray(inAttributeLocation + 2);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
+	glEnableVertexAttribArray(inAttributeLocation + 3);//layout location = attribLoc in vs
+	glVertexAttribPointer(inAttributeLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
+
+	unsigned int AssignIBO2;
+	glGenBuffers(1, &AssignIBO2);
+	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO2);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, IndexData.size() * sizeof(unsigned int), IndexData.data(), GL_STATIC_DRAW);
+
+	glBindVertexArray(0);
+	glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+
+}
+
+void testClothRender::fillBufferData() {
 	testGrid.clear();
 	testGrid2.clear();
 
@@ -29,107 +93,48 @@ void testClothRender::ResetVBO() {
 			testGrid.push_back({glm::vec3((float)i / 10.0f, 0.0f, (float)j / 10.0f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(1.0f, 1.0f, 0.0f),//megenta
-								glm::vec3(1.0f, 0.0f, 1.0f),//p color megenta
+								glm::vec3(0.0f, 0.0f, 0.0f),//p color megenta
 								glm::vec3(0.0f) });	//for kernel to write velocity
 
 		}
 	}
 
-	for (int i = 0; i < cloth_width; i++) {
-		for (int j = 0; j < cloth_height; j++) {
-			testGrid2.push_back({ glm::vec3((float)i / 10.0f, 0.0f, (float)j / 10.0f), //pos
-								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
-								glm::vec3(0.0f, 1.0f, 1.0f),//
-								glm::vec3(0.0f, 1.0f, 1.0f),//point color	
-								glm::vec3(0.0f) });
-		}
-	}
-
-}
-
-void testClothRender::initVBO(GLuint AttribLocation) {
-
-	ResetVBO();
-	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
-
-	//gen VAO
-	glGenVertexArrays(1, &cudaVAO1);
-	glBindVertexArray(cudaVAO1);
-
-	// create buffer object
-	glGenBuffers(1, &cudaVBO1);
-	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO1);
-	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid.data(), GL_DYNAMIC_DRAW);
-
-
-	// register this buffer object with CUDA
-	glEnableVertexAttribArray(AttribLocation);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
-	glEnableVertexAttribArray(AttribLocation + 1);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
-	glEnableVertexAttribArray(AttribLocation + 2);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
-	glEnableVertexAttribArray(AttribLocation + 3);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
-
 	//fill IBO
-	std::vector<unsigned int> testInd;
 	for (int i = 0; i < cloth_width - 1; i++)
 	{
 		for (int j = 0; j < cloth_height; j++)
 		{
-			testInd.push_back(i * cloth_height + j);
-			testInd.push_back(i * cloth_height + j + cloth_height);
+			IndexData.push_back(i * cloth_height + j);
+			IndexData.push_back(i * cloth_height + j + cloth_height);
 		}
-		testInd.push_back(RestartInd);
+		IndexData.push_back(RestartInd);
 	}
 	//IBO size
-	indexBuffSize = testInd.size();
+	indexBuffSize = IndexData.size();
+}
 
-	unsigned int AssignIBO;
-	glGenBuffers(1, &AssignIBO);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, testInd.size() * sizeof(unsigned int), testInd.data(), GL_STATIC_DRAW);
+void testClothRender::initVBO(GLuint in_attribLoc) {
 
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
+	fillBufferData();
+	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
+	inAttributeLocation = in_attribLoc;
 
-	/// <summary>
-	/// ///////////////////////////////////////////
-	/// BUFFER#2
-	/// 
+	//gen buffer obj IDs
+	glGenVertexArrays(1, &cudaVAO1);
 	glGenVertexArrays(1, &cudaVAO2);
-	glBindVertexArray(cudaVAO2);
-	// create buffer object
+	glGenBuffers(1, &cudaVBO1);
 	glGenBuffers(1, &cudaVBO2);
-	glBindBuffer(GL_ARRAY_BUFFER, cudaVBO2);
-	glBufferData(GL_ARRAY_BUFFER, testGrid.size() * sizeof(testVert), testGrid2.data(), GL_DYNAMIC_DRAW);
+	glGenBuffers(1, &AssignIBO);
 
-	// register this buffer object with CUDA
-	glEnableVertexAttribArray(AttribLocation);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), 0);
-	glEnableVertexAttribArray(AttribLocation + 1);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 1, 2, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, texCrd));
-	glEnableVertexAttribArray(AttribLocation + 2);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 2, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, normal));
-	glEnableVertexAttribArray(AttribLocation + 3);//layout location = attribLoc in vs
-	glVertexAttribPointer(AttribLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
-	
-	unsigned int AssignIBO2;
-	glGenBuffers(1, &AssignIBO2);
-	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO2);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, testInd.size() * sizeof(unsigned int), testInd.data(), GL_STATIC_DRAW);
 
-	glBindVertexArray(0);
-	glBindBuffer(GL_ARRAY_BUFFER, 0);
+	ResetClothBuffer();
 
 }
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
 	clothConst.M = 0.01f;
-	clothConst.g = -22.0f;
-	clothConst.k = 115.0f;
+	clothConst.g = -30.0f;
+	clothConst.k = 140.0f;
 	clothConst.rLen = 0.1f;
 
 	clothConst.Fw = glm::vec3(0.0f);
@@ -140,7 +145,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.MinL = 0.015f;
 	clothConst.MaxL = 0.025f;
 	clothConst.Dp = 0.05f;
-	clothConst.in_testFloat = 0.654f;
+	clothConst.in_testFloat = 0.01f;
 
 	fxClothConst.width = cloth_width;
 	fxClothConst.height = cloth_height;
@@ -150,7 +155,6 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
-	
 }
 
 //creat cuda registered VBO
