@@ -1,0 +1,25 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30517.126
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Simple_ClothSimulation", "Simple_ClothSimulation.vcxproj", "{1BBC7056-AFCA-429A-A793-14CB07619397}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|x64 = Debug|x64
+		Release|x64 = Release|x64
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{1BBC7056-AFCA-429A-A793-14CB07619397}.Debug|x64.ActiveCfg = Debug|x64
+		{1BBC7056-AFCA-429A-A793-14CB07619397}.Debug|x64.Build.0 = Debug|x64
+		{1BBC7056-AFCA-429A-A793-14CB07619397}.Release|x64.ActiveCfg = Release|x64
+		{1BBC7056-AFCA-429A-A793-14CB07619397}.Release|x64.Build.0 = Release|x64
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {300600CE-9776-483B-8D9B-9635B04BF9A1}
+	EndGlobalSection
+EndGlobal

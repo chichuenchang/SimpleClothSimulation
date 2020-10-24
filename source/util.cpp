@@ -11,9 +11,9 @@ float GetDeltaT(float &curT, float &lasT) {
 void ReloadShader(GLuint &shaderID) {
 
 	std::vector<GLuint> shaders;
-	GLuint tmp_shader_id = compileShader(GL_VERTEX_SHADER, "sh_v.glsl");
+	GLuint tmp_shader_id = compileShader(GL_VERTEX_SHADER, "source/sh_v.glsl");
 	shaders.push_back(tmp_shader_id);
-	shaders.push_back(compileShader(GL_FRAGMENT_SHADER, "sh_f.glsl"));
+	shaders.push_back(compileShader(GL_FRAGMENT_SHADER, "source/sh_f.glsl"));
 
 	shaderID = linkProgram(shaders);
 }
@@ -67,6 +67,8 @@ GLuint compileShader(GLenum type, string filename, string prepend) {
 	// Read the file
 	ifstream file(filename);
 	stringstream ss;
+	string line;
+
 	if (!file.is_open()) {
 		ss << "Could not open " << filename << "!" << endl;
 		throw runtime_error(ss.str());
@@ -111,6 +113,7 @@ GLuint compileShader(GLenum type, string filename, string prepend) {
 
 	return shader;
 }
+
 GLuint linkProgram(vector<GLuint> shaders) {
 	GLuint program = glCreateProgram();
 

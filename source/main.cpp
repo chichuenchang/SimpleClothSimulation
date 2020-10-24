@@ -11,7 +11,7 @@ extern "C" {//force opengl run with nvidia card
 //window
 GLFWwindow* window = nullptr;
 GLfloat clear_color[3] = { 0.05f, 0.1f, 0.1f };
-int width = 1600, height = 1600;
+int width = 1600, height = 800;
 //GUI
 bool show_demo_window = false;
 // camera
