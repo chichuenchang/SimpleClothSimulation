@@ -200,30 +200,19 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
     //***********************************
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
     glm::vec3 netF = 
-        cVar.M * glm::vec3(0.0f, cVar.g, 0.0f) 
-        + cVar.in_testFloat * cVar.Fw
-        - cVar.a * vel * (glm::length(vel))
-        + innF
-        - cVar.Dp * vel * (glm::length(vel));
+        1.0f* cVar.M * glm::vec3(0.0f, cVar.g, 0.0f) 
+        + 1.0f* cVar.in_testFloat * cVar.Fw
+        - 1.0f*cVar.a * vel * (glm::length(vel))
+        + 1.0f*innF
+        - 1.0f *cVar.Dp * vel * (glm::length(vel));
 
 
     return netF;
 }
-//
-//__device__ glm::vec3 RK4f(float stpT, glm::vec3 pos, glm::vec3 vel, float* readBuff,
-//    float* writeBuff, unsigned int x, unsigned int y) {
-//
-//    glm::vec3 Acc = computeForceNet(pos, readBuff, writeBuff, x, y)/ cVar.M;
-//
-//
-//
-//    return pos + 0.0f*vel * stpT + Acc * stpT * stpT;
-//}
 
 __device__ glm::vec3 RK4func(float stpT, glm::vec3 pos, glm::vec3 acc, glm::vec3 vel) {
     return pos + vel * stpT + 0.5f * acc * stpT * stpT;
 }
-
 
 __device__
 glm::vec3 RungeKutt(float stpT, glm::vec3 pT0, glm::vec3 acc, glm::vec3 vel) {
@@ -299,8 +288,8 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     writeToVBO(Vel, writeBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 nextPos;
-    if ((x == 0 && y == 0) || (x == 0 && y == height - 1)/*||
-        (x ==0 && y ==height /4)|| (x == 0 &&y == 3* height /4)*/
+    if ((x == 0 && y == 0) || (x == 0 && y == height - 1)||
+        (x ==0 && y ==height /4)|| (x == 0 &&y == 3* height /4)
         ) {
 
         nextPos = Pos;
@@ -331,7 +320,7 @@ void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int m
     unsigned int vboStridInFloat)
 {
  
-    dim3 block(8, 8, 1);
+    dim3 block(32, 32, 1);
     dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
     computeParticlePos_Kernel << < grid, block >> > (readBuff, writeBuff, mesh_width,
         mesh_height, vboStridInFloat);

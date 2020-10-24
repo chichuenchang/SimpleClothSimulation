@@ -47,7 +47,7 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp);
 void framebufferSizeCallback(GLFWwindow* w, int width, int height);
 void initGLFW(GLFWwindow** win, int winWidth, int winHeight);
 void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst);
-/// /////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
 
 void ComputeTransform(glm::mat4 &returnTransform) {
 
@@ -97,8 +97,6 @@ void CleanUpGL() {
 int main() {
 
 	InitGL();
-
-	
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 	
 	//delta time

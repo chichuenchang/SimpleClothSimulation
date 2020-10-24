@@ -132,9 +132,10 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 }
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
+	//verlet
 	clothConst.M = 0.01f;
 	clothConst.g = -30.0f;
-	clothConst.k = 140.0f;
+	clothConst.k = 160.0f;
 	clothConst.rLen = 0.1f;
 
 	clothConst.Fw = glm::vec3(0.0f);
@@ -155,6 +156,31 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
+
+	//rungekutta
+	//clothConst.M = 0.01f;
+	//clothConst.g = -10.0f;
+	//clothConst.k = 500.0f;
+	//clothConst.rLen = 0.1f;
+
+	//clothConst.Fw = glm::vec3(0.0f);
+	//clothConst.a = 0.05f;
+	//clothConst.stp = 0.004f;
+	//clothConst.dt = 0.000005f;
+	//clothConst.time = 0.0f;
+	//clothConst.MinL = 0.015f;
+	//clothConst.MaxL = 0.025f;
+	//clothConst.Dp = 0.05f;
+	//clothConst.in_testFloat = 0.01f;
+
+	//fxClothConst.width = cloth_width;
+	//fxClothConst.height = cloth_height;
+	//fxClothConst.vboStrdFlt = VBOStrideInFloat;
+	////by the layout in vbo
+	//fxClothConst.OffstPos = 0;
+	//fxClothConst.OffstNm = 5;
+	//fxClothConst.OffstCol = 8;
+	//fxClothConst.OffstVel = 11;
 }
 
 //creat cuda registered VBO
