@@ -1,6 +1,3 @@
-//TODO
-//1. pingpong buffer
-//2. pass variables to kernel with constant
 
 #include "CudaInte.cuh"
 
@@ -166,7 +163,7 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     }
     
     //color represents the magnitude of inner force
-    glm::vec3 col = glm::vec3(glm::length(innF)-0.1f, 0.2f, 0.7f - glm::length(innF));
+    glm::vec3 col = glm::vec3(glm::length(innF)-0.15f, 0.3f, 0.7f - glm::length(innF));
     writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
 
     //float a = cVar.in_testFloat;

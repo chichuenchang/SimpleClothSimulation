@@ -11,6 +11,9 @@
 
 //4. introduce a new air floating force to the particle
 
+//5. add textures
+
+
 #include "testClothRender.h"
 #include "util.hpp"
 #include "CudaInte.cuh"
@@ -34,6 +37,8 @@ glm::vec2 panCam = glm::vec2(0.0f);
 glm::vec3 camCoords = glm::vec3(0.0, 0.0, 1.0);
 glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
+
+glm::vec2 msScrnCrdLast = glm::vec2(0.0f);
 //time
 float time;
 
@@ -128,6 +133,9 @@ int main() {
 
 	//display
 	while (!glfwWindowShouldClose(window)) {
+
+		std::cout << "camera trans.x = " << panCam.x << " camera trans.y = " << panCam.y << std::endl;
+
 		glfwPollEvents();
 		glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -189,15 +197,14 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
 		pan = true;
-		camOrigin = glm::vec2(camCoords);
 		double xpos, ypos; //has to be double, as is the argument type of glfwGetCursorPos();
 		glfwGetCursorPos(w, &xpos, &ypos);
-		mouseOrigin = glm::vec2(xpos, ypos);
+		msScrnCrdLast = glm::vec2(xpos, ypos);
 
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
 		pan = false;
-
+		
 	}
 
 
@@ -216,19 +223,17 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 			camCoords.y = newAngle.y;
 		}
 	}
+
+
 	if (pan) {
 
-		float rotScale = std::fmin(width / 450.f, height / 270.f);
-		glm::vec2 mouseDelta = mouseOrigin - glm::vec2(xp, yp) ;
-		glm::vec2 newAngle = camOrigin + mouseDelta / rotScale;
-		//newAngle.y = glm::clamp(newAngle.y, -90.0f, 90.0f);
-		//while (newAngle.x > 180.0f) newAngle.x -= 360.0f;
-		//while (newAngle.y < -180.0f) newAngle.y += 360.0f;
-		if (glm::length(newAngle - glm::vec2(camCoords)) > std::numeric_limits<float>::epsilon()) {
-			panCam.x = -0.01f * newAngle.x;
-			panCam.y = 0.01f * newAngle.y;
+		glm::vec2 msScrnCrdCur = glm::vec2(xp, yp);
+		glm::vec2 delta = msScrnCrdCur - msScrnCrdLast;
+		msScrnCrdLast = msScrnCrdCur;
+		
+		panCam.x += 0.01f * delta.x;
+		panCam.y += -0.01f * delta.y;
 
-		}
 	}
 
 
