@@ -34,8 +34,6 @@ void copyFixClothConst(FixedClothConstant* in_fxConst) {
 
     cudaMemcpyToSymbol(fxVar, in_fxConst, sizeof(FixedClothConstant));
     CheckCudaErr("fixed constant memory copy fail");
-
-   
 }
 
 __device__
@@ -193,18 +191,19 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
 
     glm::vec3 vel = readFromVBO(readBuff, x, y, fxVar.OffstVel);
 
-    glm::vec3 Fwind = cVar.in_testFloat *
-        glm::vec3(glm::sin(currPos.y * 1.3 + 1.9f*cVar.time), glm::sin(currPos.z * 0.7),
-            glm::cos(1.7f * currPos.x + 1.3f* cVar.time));
+    glm::vec3 Fwind = cVar.WStr *
+        glm::vec3(1.0f + glm::sin(currPos.y * 1.3 + 1.9f*cVar.time), 0.2f* glm::sin(currPos.z * 7.1f),
+            0.5f*glm::cos(1.7f * currPos.x + 1.3f* cVar.time));
     
     //***********************************
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
-    glm::vec3 netF = 
-        1.0f* cVar.M * glm::vec3(0.0f, cVar.g, 0.0f) 
-        + 1.0f* cVar.in_testFloat * cVar.Fw
-        - 1.0f*cVar.a * vel * (glm::length(vel))
-        + 1.0f*innF
-        - 1.0f *cVar.Dp * vel * (glm::length(vel));
+    glm::vec3 netF =
+        1.0f * cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)
+        /*+ 1.0f * cVar.in_testFloat * cVar.Fw*/
+        + Fwind
+        -1.0f * cVar.a * vel * (glm::length(vel))
+        + 1.0f * innF
+        - 1.0f * cVar.Dp * vel * (glm::length(vel));
 
 
     return netF;
@@ -289,10 +288,14 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
 
     glm::vec3 nextPos;
     if ((x == 0 && y == 0) || (x == 0 && y == height - 1)||
-        (x ==0 && y ==height /4)|| (x == 0 &&y == 3* height /4)
+        (x ==0 && y == height /4)|| (x == 0 &&y == 3* height /4)
         ) {
 
-        nextPos = Pos;
+        glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.5f * fxVar.height / 10.0f) - Pos;
+
+        nextPos = Pos + 0.001f* dir * cVar.in_testFloat;
+
+
     }
     else {
 

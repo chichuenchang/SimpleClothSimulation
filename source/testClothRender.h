@@ -14,6 +14,8 @@ public:
 	void DrawCloth();
 	void ReloadCloth();
 
+	void PassPolygonMode(int in_polygonMode);
+
 private:
 	unsigned int cloth_width;
 	unsigned int cloth_height;
@@ -53,5 +55,7 @@ private:
 
 	bool pp;
 	bool resetClothFlag;
+	int DrawPolygonMode;
+
 };
 

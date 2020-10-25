@@ -26,17 +26,15 @@ struct ClothConstant {
 	float k;
 	float rLen;	//initial length
 
-
 	glm::vec3 Fw; //wind
+	float WStr;
 	float a;
 	float stp; //time step
+	float Dp;
 	
 	float dt; //delta time each frame
 	float time; //system time
 
-	float MinL;
-	float MaxL;
-	float Dp;
 
 
 	float in_testFloat;

@@ -1,8 +1,7 @@
 #version 430 core
 //[uniform]
-uniform sampler2D texUnit;
-uniform vec3 mousPck;
-uniform float uTime;
+layout(location = 1) uniform float uTime;
+layout(location = 3)uniform int ColMode;
 
 //[varying]
 in vec3 vsOut_pos;
@@ -25,5 +24,8 @@ void main() {
 	outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f);
 
 	outCol = vec4(vsOut_normal, 1.0f);
-	outCol = vec4(vsOut_pcol, 1.0f);
+	if (ColMode == 0) { outCol = vec4(vsOut_pcol, 1.0f);}
+	else if (ColMode == 1) { outCol = vec4(vsOut_normal, 1.0f); }
+	else if (ColMode == 2) { outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f); }
+
 }

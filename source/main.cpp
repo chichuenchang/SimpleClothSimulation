@@ -1,3 +1,16 @@
+//TODO:
+//1. give additional vertices to the cloth, lower artifacts
+//for each grid, make 1 additional vertices in the center, push it to vbo
+//find a way to connect triangles and make IBO
+//in cuda, compute 4 vertices each grid as usual, also interpolates the position of the center vertex
+//render
+
+//2. phong lighting
+
+//3. shadow mapping
+
+//4. introduce a new air floating force to the particle
+
 #include "testClothRender.h"
 #include "util.hpp"
 #include "CudaInte.cuh"
@@ -13,7 +26,7 @@ GLFWwindow* window = nullptr;
 GLfloat clear_color[3] = { 0.05f, 0.1f, 0.1f };
 int width = 1600, height = 800;
 //GUI
-bool show_demo_window = false;
+bool show_demo_window = true;
 // camera
 bool camRot = false;
 bool pan = false;
@@ -37,6 +50,11 @@ const unsigned int clothHeight = 64;
 //constants passed to cuda
 ClothConstant cVar;
 FixedClothConstant fxVar;
+//display option variable
+int polygonMode = 0;
+int ColorMode = 0;
+
+
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -66,6 +84,8 @@ void PassUniform() {
 	//uniform location
 	GLuint xform_uloc = 0;
 	GLuint time_uloc = 1;
+	GLuint ColMod_uloc = 3;
+
 
 	//transformation
 	glm::mat4 transform;
@@ -75,6 +95,10 @@ void PassUniform() {
 	glUniformMatrix4fv(xform_uloc, 1, GL_FALSE, glm::value_ptr(transform));
 	time = glfwGetTime();
 	glUniform1f(time_uloc, time);
+	glUniform1i(ColMod_uloc, ColorMode);
+
+
+
 }
 
 void InitGL() {
@@ -115,8 +139,8 @@ int main() {
 		cVar.dt = GetDeltaT(currT, lastT);
 		cVar.time = currT;
 		//fw from the paper
-		cVar.Fw = 0.4f*glm::vec3(glm::sin(cVar.a * 23.0f*currT), 
-			glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
+		//cVar.Fw = 0.4f*glm::vec3((1.0f+ glm::sin(cVar.a * 23.0f*currT)), 
+		//	glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
 
 		cloth.CudaUpdateCloth(cVar);
 		assert(glGetError() == GL_NO_ERROR);
@@ -163,7 +187,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 	} if (button == GLFW_MOUSE_BUTTON_LEFT && action == GLFW_RELEASE) {
 		camRot = false;
 	}
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_PRESS) {
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_PRESS) {
 		pan = true;
 		camOrigin = glm::vec2(camCoords);
 		double xpos, ypos; //has to be double, as is the argument type of glfwGetCursorPos();
@@ -171,7 +195,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 		mouseOrigin = glm::vec2(xpos, ypos);
 
 	}
-	if (button == GLFW_MOUSE_BUTTON_RIGHT && action == GLFW_RELEASE) {
+	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
 		pan = false;
 
 	}
@@ -244,16 +268,16 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 	static int counter = 0;
 	{
-		ImGui::Begin("JC Zheng");                          // Create a window called "Hello, world!" and append into it.
+		ImGui::Begin("JC Zheng, Cloth Simulation");                          // Create a window called "Hello, world!" and append into it.
 
 		ImGui::ColorEdit3("clear color", clearCol); // Edit 3 floats representing a color
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-		ImGui::SliderFloat("Wind Strength", &clothConst->in_testFloat, 0.0f, 3.0f, "test float = %.3f");
+		ImGui::SliderFloat("Time Step", &cVar.stp, 0.001f, 0.009f, "Time Step = %.3f");
 		
 		static int clicked = 0;
-		if (ImGui::Button("Reload Cloth")) {
+		if (ImGui::Button("Reload Cloth")){
 			cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 
 			clicked++;
@@ -264,6 +288,36 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			ImGui::Text("Reload Cloth");
 			clicked = 0;
 		}
+		if (ImGui::CollapsingHeader("External Properties")) {
+			ImGui::SliderFloat("Wind Strength", &clothConst->WStr, -1.0f, 1.0f, "Wind Strength = %.3f");
+			ImGui::SliderFloat("Folding", &clothConst->in_testFloat, -1.0f, 1.0f, "Folding = %.3f");
+		}
+		if (ImGui::CollapsingHeader("Cloth Constants")) {
+			ImGui::SliderFloat("Particle Mass", &cVar.M, 0.001f, 0.09f, "Particle Mass = %.3f");
+			ImGui::SliderFloat("Gravity", &cVar.g, -50.0, -0.0f, "Gravity = %.3f");
+			ImGui::SliderFloat("Rest Length", &cVar.rLen, 0.01f, 0.2f, "Rest Length = %.3f");
+			ImGui::SliderFloat("Air Constant", &cVar.a, 0.01, 0.2f, "Air Constant = %.3f");
+			ImGui::SliderFloat("Damping", &cVar.Dp, 0.01, 0.2f, "Damping = %.3f");
+		}
+
+
+		if (ImGui::CollapsingHeader("Display Options")) {
+			ImGui::Text("Polygon Mode");
+			if (ImGui::RadioButton("Draw Lines", &polygonMode, 0)) {
+				cloth.PassPolygonMode(polygonMode);
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Draw Triangles", &polygonMode, 1) ){
+				cloth.PassPolygonMode(polygonMode);
+			}
+		
+			ImGui::Text("Shading Color");
+			ImGui::RadioButton("Net Force", &ColorMode, 0); ImGui::SameLine();
+			ImGui::RadioButton("Normal", &ColorMode, 1); ImGui::SameLine();
+			ImGui::RadioButton("UV", &ColorMode, 2); 
+
+		}
+
 
 
 

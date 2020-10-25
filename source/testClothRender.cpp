@@ -21,6 +21,8 @@ testClothRender::testClothRender()
 
 	pp = false;
 	resetClothFlag = false;
+
+	DrawPolygonMode = 0;
 }
 
 void testClothRender::ReloadCloth() {
@@ -119,13 +121,21 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
 	inAttributeLocation = in_attribLoc;
 
-	//gen buffer obj IDs
-	glGenVertexArrays(1, &cudaVAO1);
-	glGenVertexArrays(1, &cudaVAO2);
-	glGenBuffers(1, &cudaVBO1);
-	glGenBuffers(1, &cudaVBO2);
-	glGenBuffers(1, &AssignIBO);
-
+	if (cudaVBO1 > -1) {
+		glDeleteBuffers(1, &cudaVAO1);
+		glDeleteBuffers(1, &cudaVAO2);
+		glDeleteBuffers(1, &cudaVBO1);
+		glDeleteBuffers(1, &cudaVBO2);
+		glDeleteBuffers(1, &AssignIBO);
+	}
+	else {
+		//gen buffer obj IDs
+		glGenVertexArrays(1, &cudaVAO1);
+		glGenVertexArrays(1, &cudaVAO2);
+		glGenBuffers(1, &cudaVBO1);
+		glGenBuffers(1, &cudaVBO2);
+		glGenBuffers(1, &AssignIBO);
+	}
 
 	ResetClothBuffer();
 
@@ -139,12 +149,11 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.rLen = 0.1f;
 
 	clothConst.Fw = glm::vec3(0.0f);
+	clothConst.WStr = 0.0f;
 	clothConst.a = 0.05f;
 	clothConst.stp = 0.004f;
 	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
-	clothConst.MinL = 0.015f;
-	clothConst.MaxL = 0.025f;
 	clothConst.Dp = 0.05f;
 	clothConst.in_testFloat = 0.01f;
 
@@ -162,7 +171,6 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	//clothConst.g = -10.0f;
 	//clothConst.k = 500.0f;
 	//clothConst.rLen = 0.1f;
-
 	//clothConst.Fw = glm::vec3(0.0f);
 	//clothConst.a = 0.05f;
 	//clothConst.stp = 0.004f;
@@ -172,7 +180,6 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	//clothConst.MaxL = 0.025f;
 	//clothConst.Dp = 0.05f;
 	//clothConst.in_testFloat = 0.01f;
-
 	//fxClothConst.width = cloth_width;
 	//fxClothConst.height = cloth_height;
 	//fxClothConst.vboStrdFlt = VBOStrideInFloat;
@@ -226,6 +233,12 @@ void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
 
 }
 
+void testClothRender::PassPolygonMode(int in_polygonMode) {
+
+	
+	 DrawPolygonMode =  in_polygonMode;
+}
+
 void testClothRender::DrawCloth() {
 	//element draw
 	glEnable(GL_PRIMITIVE_RESTART);
@@ -233,7 +246,7 @@ void testClothRender::DrawCloth() {
 	//draw the write buffer
 	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
 
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
+	glPolygonMode(GL_FRONT_AND_BACK, DrawPolygonMode ==0? GL_LINE: GL_FILL);
 	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
