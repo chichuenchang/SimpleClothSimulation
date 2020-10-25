@@ -19,12 +19,8 @@
 
 #include "util.hpp"
 
-
-
 void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, unsigned int mesh_width,
 	unsigned int mesh_height, unsigned int vboStridInFloat);
-
 void CheckCudaErr(const char* msg);
-
 void updateClothConst(ClothConstant* in_passVar);
 void copyFixClothConst(FixedClothConstant* in_fxConst);

@@ -1,4 +1,3 @@
-
 #include "CudaInte.cuh"
 
 __constant__ 
@@ -6,9 +5,6 @@ ClothConstant cVar;
 __constant__
 FixedClothConstant fxVar;
 
-
-__device__
-float curr, last;
 
 void CheckCudaErr(const char* msg)
 {
@@ -58,6 +54,21 @@ float length(glm::vec3 a, glm::vec3 b) {
     return glm::length(b -a );
 }
 
+__device__
+glm::vec3 constraintForce(glm::vec3 p_to_nbor, float lCoeff) {
+    //constrain Type = 1.0f: structure
+    //constrain Type = 1.41421356237f : shear
+    //constrain Type = 2.0f: bend
+    float L = glm::length(p_to_nbor);
+    if (L < lCoeff * cVar.MxL) { 
+        return glm::normalize(p_to_nbor) * cVar.k * (L - lCoeff * cVar.rLen); 
+    }
+    else {
+        return glm::normalize(p_to_nbor) * (cVar.k * (lCoeff * cVar.MxL - lCoeff * cVar.rLen) +
+            cVar.k * 1.6f * (L - lCoeff*cVar.MxL));
+    }
+}
+
 __device__//normal is here also
 glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     unsigned int y, glm::vec3 curP) {
@@ -68,102 +79,89 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     //                |
     //                |
     //                |y+
-    
-    glm::vec3 posL, posR, posU, posD, tempV, tempP;
-    glm::vec3 innF = glm::vec3(0.0f);
 
+    glm::vec3 tempV = glm::vec3(0.0f);
+    glm::vec3 innF = glm::vec3(0.0f);
     //structure
     //left
-    if ((x) < 1) { innF += glm::vec3(0.0); posL = curP; }
-    else { 
-        posL = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos); 
-        tempV = posL - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen);
+    if ((x) < 1) { innF += glm::vec3(0.0);}
+    else {
+        tempV = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.0f);
     }
     //right
-    if ((x + 1) > fxVar.width - 1) { innF += glm::vec3(0.0f); posR = curP; }
-    else { 
-        posR = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos); 
-        tempV = posR - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen);
+    if ((x + 1) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
+    else {
+        tempV = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.0f);
     }
     //up
-    if ((y) < 1) { innF += glm::vec3(0.0f); posU = curP; }
-    else { 
-        posU = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos);
-        tempV = posU - curP;
-        innF += glm::normalize(tempV) * cVar.k * ((glm::length(tempV)) - cVar.rLen);
+    if ((y) < 1) { innF += glm::vec3(0.0f); }
+    else {
+        tempV = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.0f);
     }
     //down
-    if ((y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); posD = curP; }
-    else { 
-        posD = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos); 
-        tempV = posD - curP;
-        innF += glm::normalize(tempV) * cVar.k * ((glm::length(tempV)) - cVar.rLen);
+    if ((y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
+    else {
+        tempV = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.0f);
     }
 
     //shear neighbor
     //left up
     if ((x) < 1 || (y) < 1) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x - 1, y - 1, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 1.41421356237f);
+    else {
+        tempV = readFromVBO(readBuff, x - 1, y - 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.41421356237f);
     }
     //left down
     if ((x) < 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x - 1, y + 1, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 1.41421356237f);
+    else {
+        tempV = readFromVBO(readBuff, x - 1, y + 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.41421356237f);
     }
     //right up
     if ((x + 1) > fxVar.width - 1 || (y) < 1) { innF += glm::vec3(0.0f); }
     else {
-        tempP = readFromVBO(readBuff, x + 1, y - 1, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 1.41421356237f);
+        tempV = readFromVBO(readBuff, x + 1, y - 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.41421356237f);
     }
     //right down
     if ((x + 1) > fxVar.width - 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x + 1, y + 1, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 1.41421356237f);
+    else {
+        tempV = readFromVBO(readBuff, x + 1, y + 1, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 1.41421356237f);
     }
 
     //bend neighbor
     //left 2
     if ((x) < 2) { innF += glm::vec3(0.0f); }
     else {
-        tempP = readFromVBO(readBuff, x - 2, y + 0, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 2.0f);
+        tempV = readFromVBO(readBuff, x - 2, y + 0, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 2.0f);
     }
     //right 2
     if ((x + 2) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x + 2, y + 0, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 2.0f);
+    else {
+        tempV = readFromVBO(readBuff, x + 2, y + 0, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 2.0f);
     }
     //up 2
     if ((y) < 2) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x + 0, y - 2, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 2.0f);
+    else {
+        tempV = readFromVBO(readBuff, x + 0, y - 2, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 2.0f);
     }
     //down 2
     if ((y + 2) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
-    else { 
-        tempP = readFromVBO(readBuff, x + 0, y + 2, fxVar.OffstPos);
-        tempV = tempP - curP;
-        innF += glm::normalize(tempV) * cVar.k * (glm::length(tempV) - cVar.rLen * 2.0f);
+    else {
+        tempV = readFromVBO(readBuff, x + 0, y + 2, fxVar.OffstPos) - curP;
+        innF += constraintForce(tempV, 2.0f);
     }
-    
+
     //color represents the magnitude of inner force
-    glm::vec3 col = glm::vec3(glm::length(innF)-0.15f, 0.3f, 0.7f - glm::length(innF));
+    glm::vec3 col = glm::vec3(glm::length(innF) - 0.15f, 0.3f, 0.7f - glm::length(innF));
     writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
 
     //float a = cVar.in_testFloat;
@@ -277,22 +275,19 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
 
     glm::vec3 Acc = ForceNet / cVar.M;
 
-
     //velocity
     glm::vec3 lastV = readFromVBO(readBuff, x, y, fxVar.OffstVel);
     glm::vec3 Vel = lastV + Acc * cVar.stp;
     writeToVBO(Vel, writeBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 nextPos;
-    if ((x == 0 && y == 0) || (x == 0 && y == height - 1)||
-        (x ==0 && y == height /4)|| (x == 0 &&y == 3* height /4)
+    if ((x == 0 && y == 0) || (x == 0 && y == height - 1) ||
+        (x == 0 && y == height / 4) || (x == 0 && y == 3 * height / 4)
         ) {
 
         glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.5f * fxVar.height / 10.0f) - Pos;
 
         nextPos = Pos + 0.001f* dir * cVar.in_testFloat;
-
-
     }
     else {
 
@@ -301,17 +296,6 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     }
 
     writeToVBO(nextPos, writeBuff, x, y, fxVar.OffstPos);
-
-    ///////////////////////////////////
-    //test output
-    //float u = x /100.0f;
-    //float v = y /100.0f;
-    //float freq = 0.5f;
-    //float w = glm::sin(u  + cVar.time * 1.3f * freq) * glm::cos(v + cVar.time * 1.7f * freq) * 0.5f;
-    //write NextPos to VBO
-    //test position
-    //glm::vec3 testPos = glm::vec3(u, w, v);
-    //writeToVBO(posRead, readBuff, x, y, fxVar.OffstPos);
 
 }
 

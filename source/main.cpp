@@ -5,14 +5,15 @@
 //in cuda, compute 4 vertices each grid as usual, also interpolates the position of the center vertex
 //render
 
-//2. phong lighting
+//2. lighting
 
-//3. shadow mapping
+//3. shadow 
 
 //4. introduce a new air floating force to the particle
 
 //5. add textures
 
+//6. clamp the length between particle
 
 #include "testClothRender.h"
 #include "util.hpp"
@@ -58,8 +59,6 @@ FixedClothConstant fxVar;
 //display option variable
 int polygonMode = 0;
 int ColorMode = 0;
-
-
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -204,10 +203,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
 		pan = false;
-		
 	}
-
-
 }
 
 void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
@@ -235,7 +231,6 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 		panCam.y += -0.01f * delta.y;
 
 	}
-
 
 }
 
@@ -298,6 +293,7 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			ImGui::SliderFloat("Folding", &clothConst->in_testFloat, -1.0f, 1.0f, "Folding = %.3f");
 		}
 		if (ImGui::CollapsingHeader("Cloth Constants")) {
+			ImGui::SliderFloat("Stiff K", &cVar.k, 50.0f, 220.0f, "Stiff K = %.3f");
 			ImGui::SliderFloat("Particle Mass", &cVar.M, 0.001f, 0.09f, "Particle Mass = %.3f");
 			ImGui::SliderFloat("Gravity", &cVar.g, -50.0, -0.0f, "Gravity = %.3f");
 			ImGui::SliderFloat("Rest Length", &cVar.rLen, 0.01f, 0.2f, "Rest Length = %.3f");
@@ -308,11 +304,15 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 		if (ImGui::CollapsingHeader("Display Options")) {
 			ImGui::Text("Polygon Mode");
-			if (ImGui::RadioButton("Draw Lines", &polygonMode, 0)) {
+			if (ImGui::RadioButton("Polygon Fill", &polygonMode, 0)) {
 				cloth.PassPolygonMode(polygonMode);
 			}
 			ImGui::SameLine();
-			if (ImGui::RadioButton("Draw Triangles", &polygonMode, 1) ){
+			if (ImGui::RadioButton("Polygon Line", &polygonMode, 1) ){
+				cloth.PassPolygonMode(polygonMode);
+			}
+			ImGui::SameLine();
+			if (ImGui::RadioButton("Draw Points", &polygonMode, 2)) {
 				cloth.PassPolygonMode(polygonMode);
 			}
 		

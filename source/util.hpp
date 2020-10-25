@@ -31,7 +31,8 @@ struct ClothConstant {
 	float a;
 	float stp; //time step
 	float Dp;
-	
+	float MxL;
+
 	float dt; //delta time each frame
 	float time; //system time
 

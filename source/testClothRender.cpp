@@ -145,7 +145,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	//verlet
 	clothConst.M = 0.01f;
 	clothConst.g = -30.0f;
-	clothConst.k = 160.0f;
+	clothConst.k = 100.0f;
 	clothConst.rLen = 0.1f;
 
 	clothConst.Fw = glm::vec3(0.0f);
@@ -155,6 +155,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
 	clothConst.Dp = 0.05f;
+	clothConst.MxL = 0.2f;
 	clothConst.in_testFloat = 0.01f;
 
 	fxClothConst.width = cloth_width;
@@ -246,8 +247,10 @@ void testClothRender::DrawCloth() {
 	//draw the write buffer
 	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
 
-	glPolygonMode(GL_FRONT_AND_BACK, DrawPolygonMode ==0? GL_LINE: GL_FILL);
-	glDrawElements(GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
+
+	glPolygonMode(GL_FRONT_AND_BACK, DrawPolygonMode ==0? GL_FILL: GL_LINE);
+	glPointSize(3.0f);
+	glDrawElements(DrawPolygonMode == 2 ? GL_POINTS : GL_TRIANGLE_STRIP, indexBuffSize, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 
 	glBindVertexArray(0);
