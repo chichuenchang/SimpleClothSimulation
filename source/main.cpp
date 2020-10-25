@@ -199,7 +199,6 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 		double xpos, ypos; //has to be double, as is the argument type of glfwGetCursorPos();
 		glfwGetCursorPos(w, &xpos, &ypos);
 		msScrnCrdLast = glm::vec2(xpos, ypos);
-
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
 		pan = false;
@@ -219,17 +218,12 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 			camCoords.y = newAngle.y;
 		}
 	}
-
-
 	if (pan) {
-
 		glm::vec2 msScrnCrdCur = glm::vec2(xp, yp);
 		glm::vec2 delta = msScrnCrdCur - msScrnCrdLast;
 		msScrnCrdLast = msScrnCrdCur;
-		
 		panCam.x += 0.01f * delta.x;
 		panCam.y += -0.01f * delta.y;
-
 	}
 
 }
