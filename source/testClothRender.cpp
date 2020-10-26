@@ -15,7 +15,7 @@ testClothRender::testClothRender()
 	CudaVboRes1 = nullptr;
 	CudaVboRes2 = nullptr;
 	inAttributeLocation = -1;
-	VBOStrideInFloat = 0;
+	VBOStrideInFloat = sizeof(testVert) / sizeof(float);
 
 	indexBuffSize = 0;
 
@@ -27,7 +27,7 @@ testClothRender::testClothRender()
 
 }
 
-void testClothRender::ResetClothBuffer() {
+void testClothRender::setUpClothBuffer() {
 	///////////////////////////////////////////////////////////
 	//VBO#1
 	glBindVertexArray(cudaVAO1);
@@ -83,9 +83,8 @@ void testClothRender::ResetClothBuffer() {
 }
 
 void testClothRender::fillBufferData() {
+	//vbo data
 	testGrid.clear();
-	testGrid2.clear();
-
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
 			testGrid.push_back({glm::vec3((float)i * 0.02f, 0.0f, (float)j * 0.02f), //pos
@@ -97,7 +96,8 @@ void testClothRender::fillBufferData() {
 		}
 	}
 
-	//fill IBO
+	//IBO
+	IndexData.clear();
 	for (int i = 0; i < cloth_width - 1; i++)
 	{
 		for (int j = 0; j < cloth_height; j++)
@@ -124,7 +124,8 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 		glDeleteBuffers(1, &cudaVBO2);
 		glDeleteBuffers(1, &AssignIBO);
 	}
-	else {
+	else 
+	{
 		//gen buffer obj IDs
 		glGenVertexArrays(1, &cudaVAO1);
 		glGenVertexArrays(1, &cudaVAO2);
@@ -133,11 +134,12 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 		glGenBuffers(1, &AssignIBO);
 	}
 
-	ResetClothBuffer();
+	setUpClothBuffer();
 
 }
 
-void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
+void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst,
+	unsigned int clothW, unsigned int clothH) {
 	clothConst.WStr = 0.0f;
 	clothConst.WDir = glm::vec3(0.874f, 0.68f, 0.01f);
 	clothConst.offsCo = glm::vec3(19.347f, 7.36f, 1.06f);
@@ -156,8 +158,8 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.MxL = 0.04f;
 	clothConst.in_testFloat = 0.001f;
 
-	fxClothConst.width = cloth_width;
-	fxClothConst.height = cloth_height;
+	fxClothConst.width = clothW;
+	fxClothConst.height = clothH;
 	fxClothConst.vboStrdFlt = VBOStrideInFloat;
 	//by the layout in vbo
 	fxClothConst.OffstPos = 0;
@@ -165,22 +167,23 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
 
+	cloth_width = clothW;
+	cloth_height = clothH;
+
+	copyFixClothConst(&fxClothConst);
+	updateClothConst(&clothConst);
 }
 
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
 	GLuint attribLoc, ClothConstant& clthConst, FixedClothConstant& fxConst) {
 
-	cloth_width = numVertsWidth;
-	cloth_height = numVertsHeight;
+	
 	initVBO(attribLoc);
 	
-	
-	
-	copyFixClothConst(&fxConst);
 
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes1, cudaVBO1, cudaGraphicsMapFlagsNone));
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsWriteDiscard));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsNone));
 }
 
 void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
@@ -211,8 +214,6 @@ void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
 }
 
 void testClothRender::PassPolygonMode(int in_polygonMode) {
-
-	
 	 DrawPolygonMode =  in_polygonMode;
 }
 
@@ -222,7 +223,6 @@ void testClothRender::DrawCloth() {
 	glPrimitiveRestartIndex(RestartInd);
 	//draw the write buffer
 	glBindVertexArray(!pp ? cudaVAO2 : cudaVAO1);
-
 
 	glPolygonMode(GL_FRONT_AND_BACK, DrawPolygonMode ==0? GL_FILL: GL_LINE);
 	glPointSize(3.0f);

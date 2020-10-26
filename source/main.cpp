@@ -101,8 +101,6 @@ void PassUniform() {
 	glUniform1f(time_uloc, time);
 	glUniform1i(ColMod_uloc, ColorMode);
 
-
-
 }
 
 void InitGL() {
@@ -122,11 +120,17 @@ void CleanUpGL() {
 	glfwTerminate();
 }
 
+void debugPrint() {
+
+	std::cout << " cVar .M   =" << cVar.M << std::endl;
+	std::cout << "fxVar. vboStrdFlt = " << fxVar.vboStrdFlt << std::endl;
+}
+
 int main() {
 
 	InitGL();
+	cloth.initClothConstValue(cVar, fxVar, clothWidth, clothHeight);
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
-	cloth.initClothConstValue(cVar, fxVar);
 
 	//delta time
 	float lastT = 0.0f, currT =0.0f;

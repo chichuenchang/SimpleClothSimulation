@@ -10,7 +10,8 @@ public:
 	void initCloth(const unsigned int numVertsWidth,
 		const unsigned int numVertsHeight, GLuint attribLoc,
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
-	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
+	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst,
+		unsigned int clothW, unsigned int clothH);
 	void updateClothKernel(ClothConstant clothConst);
 	void DrawCloth();
 
@@ -29,7 +30,6 @@ private:
 		glm::vec3 vel;
 	};
 	std::vector<testVert> testGrid;
-	std::vector<testVert> testGrid2;
 	std::vector<unsigned int> IndexData;
 
 	GLuint cudaVAO1;
@@ -50,7 +50,7 @@ private:
 
 	void fillBufferData();
 	void initVBO(GLuint AttribLocation);
-	void ResetClothBuffer();
+	void setUpClothBuffer();
 
 	bool pp;
 	bool resetClothFlag;
