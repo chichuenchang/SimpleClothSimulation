@@ -26,8 +26,10 @@ struct ClothConstant {
 	float k;
 	float rLen;	//initial length
 
-	glm::vec3 Fw; //wind
 	float WStr;
+	glm::vec3 WDir;
+	glm::vec3 offsCo; //wind offset coeff
+	glm::vec3 cyclCo; //wind cycle coeff
 	float a;
 	float stp; //time step
 	float Dp;

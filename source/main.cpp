@@ -35,7 +35,7 @@ bool show_demo_window = true;
 bool camRot = false;
 bool pan = false;
 glm::vec2 panCam = glm::vec2(0.0f);
-glm::vec3 camCoords = glm::vec3(0.0, 0.0, 1.0);
+glm::vec3 camCoords = glm::vec3(0.0, 0.0, -5.0);
 glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
 
@@ -58,7 +58,7 @@ ClothConstant cVar;
 FixedClothConstant fxVar;
 //display option variable
 int polygonMode = 0;
-int ColorMode = 0;
+int ColorMode = 3;
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -126,16 +126,14 @@ int main() {
 
 	InitGL();
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
-	
+	cloth.initClothConstValue(cVar, fxVar);
+
 	//delta time
 	float lastT = 0.0f, currT =0.0f;
 
 	//display
 	while (!glfwWindowShouldClose(window)) {
-
-		std::cout << "camera trans.x = " << panCam.x << " camera trans.y = " << panCam.y << std::endl;
-
-		glfwPollEvents();
+ 		glfwPollEvents();
 		glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -168,7 +166,7 @@ int main() {
 //GLFW definition
 void scrollCallback(GLFWwindow* w, double x, double y) {
 	float offset = (y > 0) ? 0.1f : -0.1f;
-	camCoords.z = glm::clamp(camCoords.z + offset, -50.0f, 20.0f);
+	camCoords.z = glm::clamp(camCoords.z + offset, -10.0f, -5.0f);
 }
 
 void keyCallback(GLFWwindow* w, int key, int scancode, int action, int mode) {
@@ -268,35 +266,44 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-		ImGui::SliderFloat("Time Step", &cVar.stp, 0.001f, 0.009f, "Time Step = %.3f");
+		ImGui::InputFloat("Time Step", &cVar.stp, 0.001f, 0.009f, "Time Step = %.3f");
 		
-		static int clicked = 0;
 		if (ImGui::Button("Reload Cloth")){
 			cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
-
-			clicked++;
 		}
-		if (clicked & 1)
-		{
-			ImGui::SameLine();
-			ImGui::Text("Reload Cloth");
-			clicked = 0;
-		}
+		
 		if (ImGui::CollapsingHeader("External Properties")) {
-			ImGui::SliderFloat("Wind Strength", &clothConst->WStr, -1.0f, 1.0f, "Wind Strength = %.3f");
-			ImGui::SliderFloat("Folding", &clothConst->in_testFloat, -1.0f, 1.0f, "Folding = %.3f");
+			
+			ImGui::InputFloat("Folding", &clothConst->in_testFloat, -1.000f, 1.000f, "Folding = %.3f");
+			
+			ImGui::SliderFloat("Wind Str", &clothConst->WStr, 0.0f, 0.1f, "Wind Str = %.3f");
+			if (ImGui::TreeNode("Wind Detail")) {
+				ImGui::SliderFloat("Wind Dir x", &clothConst->WDir.x, 0.0f, 1.0f, "Wind Dir x = %.3f");
+				ImGui::SliderFloat("Wind Dir y", &clothConst->WDir.y, 0.0f, 1.0f, "Wind Dir y = %.3f");
+				ImGui::SliderFloat("Wind Dir z", &clothConst->WDir.z, 0.0f, 1.0f, "Wind Dir z = %.3f");
+				ImGui::SliderFloat("offset Coeff x", &clothConst->offsCo.x, 0.0f, 30.0f, "offset Coeff x = %.3f");
+				ImGui::SliderFloat("offset Coeff y", &clothConst->offsCo.y, 0.0f, 30.0f, "offset Coeff y = %.3f");
+				ImGui::SliderFloat("offset Coeff z", &clothConst->offsCo.z, 0.0f, 30.0f, "offset Coeff z = %.3f");
+				ImGui::SliderFloat("cycle Coeff x", &clothConst->cyclCo.x, 0.0f, 30.0f, "cycle Coeff x = %.3f");
+				ImGui::SliderFloat("cycle Coeff y", &clothConst->cyclCo.y, 0.0f, 30.0f, "cycle Coeff y = %.3f");
+				ImGui::SliderFloat("cycle Coeff z", &clothConst->cyclCo.z, 0.0f, 30.0f, "cycle Coeff z = %.3f");
+				
+				ImGui::TreePop();
+			}
+
 		}
 		if (ImGui::CollapsingHeader("Cloth Constants")) {
 			ImGui::SliderFloat("Stiff K", &cVar.k, 50.0f, 220.0f, "Stiff K = %.3f");
-			ImGui::SliderFloat("Particle Mass", &cVar.M, 0.001f, 0.09f, "Particle Mass = %.3f");
+			ImGui::InputFloat("Particle Mass", &cVar.M, 0.001f, 0.09f, "Particle Mass = %.3f");
 			ImGui::SliderFloat("Gravity", &cVar.g, -50.0, -0.0f, "Gravity = %.3f");
-			ImGui::SliderFloat("Rest Length", &cVar.rLen, 0.01f, 0.2f, "Rest Length = %.3f");
-			ImGui::SliderFloat("Air Constant", &cVar.a, 0.01, 0.2f, "Air Constant = %.3f");
-			ImGui::SliderFloat("Damping", &cVar.Dp, 0.01, 0.2f, "Damping = %.3f");
+			ImGui::InputFloat("Rest Length", &cVar.rLen, 0.010f, 0.200f, "Rest Length = %.3f");
+			ImGui::InputFloat("Max Length", &cVar.MxL, 0.040f, 0.250f, "Max Length = %.3f");
+			ImGui::SliderFloat("Air Constant", &cVar.a, 0.01, 0.5f, "Air Constant = %.3f");
+			ImGui::SliderFloat("Damping", &cVar.Dp, 0.01, 0.5f, "Damping = %.3f");
 		}
 
 
-		if (ImGui::CollapsingHeader("Display Options")) {
+		if (ImGui::CollapsingHeader("Debug Options")) {
 			ImGui::Text("Polygon Mode");
 			if (ImGui::RadioButton("Polygon Fill", &polygonMode, 0)) {
 				cloth.PassPolygonMode(polygonMode);
@@ -309,11 +316,13 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			if (ImGui::RadioButton("Draw Points", &polygonMode, 2)) {
 				cloth.PassPolygonMode(polygonMode);
 			}
-		
+			
 			ImGui::Text("Shading Color");
 			ImGui::RadioButton("Net Force", &ColorMode, 0); ImGui::SameLine();
 			ImGui::RadioButton("Normal", &ColorMode, 1); ImGui::SameLine();
-			ImGui::RadioButton("UV", &ColorMode, 2); 
+			ImGui::RadioButton("UV", &ColorMode, 2); ImGui::SameLine();
+			ImGui::RadioButton("Default", &ColorMode, 3); 
+
 
 		}
 

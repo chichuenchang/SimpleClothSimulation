@@ -23,11 +23,7 @@ testClothRender::testClothRender()
 	resetClothFlag = false;
 
 	DrawPolygonMode = 0;
-}
 
-void testClothRender::ReloadCloth() {
-
-	resetClothFlag = true;
 
 }
 
@@ -92,7 +88,7 @@ void testClothRender::fillBufferData() {
 
 	for (int i = 0; i < cloth_width; i++) {
 		for (int j = 0; j < cloth_height; j++) {
-			testGrid.push_back({glm::vec3((float)i / 10.0f, 0.0f, (float)j / 10.0f), //pos
+			testGrid.push_back({glm::vec3((float)i * 0.02f, 0.0f, (float)j * 0.02f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(1.0f, 1.0f, 0.0f),//megenta
 								glm::vec3(0.0f, 0.0f, 0.0f),//p color megenta
@@ -142,53 +138,33 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 }
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst) {
-	//verlet
-	clothConst.M = 0.01f;
-	clothConst.g = -30.0f;
-	clothConst.k = 100.0f;
-	clothConst.rLen = 0.1f;
-
-	clothConst.Fw = glm::vec3(0.0f);
 	clothConst.WStr = 0.0f;
-	clothConst.a = 0.05f;
+	clothConst.WDir = glm::vec3(0.874f, 0.68f, 0.01f);
+	clothConst.offsCo = glm::vec3(19.347f, 7.36f, 1.06f);
+	clothConst.cyclCo = glm::vec3(3.201f, 1.71f, 1.92f);
+
+	clothConst.M = 0.01f;
+	clothConst.g = -10.0f;
+	clothConst.k = 100.0f;
+	clothConst.rLen = 0.02f;
+
 	clothConst.stp = 0.004f;
 	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
-	clothConst.Dp = 0.05f;
-	clothConst.MxL = 0.2f;
-	clothConst.in_testFloat = 0.01f;
+	clothConst.a = 0.15f;
+	clothConst.Dp = 0.15f;
+	clothConst.MxL = 0.04f;
+	clothConst.in_testFloat = 0.001f;
 
 	fxClothConst.width = cloth_width;
 	fxClothConst.height = cloth_height;
 	fxClothConst.vboStrdFlt = VBOStrideInFloat;
 	//by the layout in vbo
-	fxClothConst.OffstPos = 0; 
+	fxClothConst.OffstPos = 0;
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
 
-	//rungekutta
-	//clothConst.M = 0.01f;
-	//clothConst.g = -10.0f;
-	//clothConst.k = 500.0f;
-	//clothConst.rLen = 0.1f;
-	//clothConst.Fw = glm::vec3(0.0f);
-	//clothConst.a = 0.05f;
-	//clothConst.stp = 0.004f;
-	//clothConst.dt = 0.000005f;
-	//clothConst.time = 0.0f;
-	//clothConst.MinL = 0.015f;
-	//clothConst.MaxL = 0.025f;
-	//clothConst.Dp = 0.05f;
-	//clothConst.in_testFloat = 0.01f;
-	//fxClothConst.width = cloth_width;
-	//fxClothConst.height = cloth_height;
-	//fxClothConst.vboStrdFlt = VBOStrideInFloat;
-	////by the layout in vbo
-	//fxClothConst.OffstPos = 0;
-	//fxClothConst.OffstNm = 5;
-	//fxClothConst.OffstCol = 8;
-	//fxClothConst.OffstVel = 11;
 }
 
 //creat cuda registered VBO
@@ -199,7 +175,7 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	cloth_height = numVertsHeight;
 	initVBO(attribLoc);
 	
-	initClothConstValue(clthConst, fxConst);
+	
 	
 	copyFixClothConst(&fxConst);
 

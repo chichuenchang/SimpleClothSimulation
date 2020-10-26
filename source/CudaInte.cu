@@ -66,7 +66,7 @@ glm::vec3 constraintForce(glm::vec3 p_to_nbor, float lCoeff) {
     }
     else {
         return glm::normalize(p_to_nbor) * (cVar.k * (lCoeff * cVar.MxL - lCoeff * cVar.rLen) +
-            cVar.k * 1.6f * (L - lCoeff*cVar.MxL));
+            cVar.k * 1.3f * (L - lCoeff*cVar.MxL));
     }
 }
 
@@ -162,7 +162,7 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     }
 
     //color represents the magnitude of inner force
-    glm::vec3 col = glm::vec3(glm::length(innF) - 0.15f, 0.3f, 0.7f - glm::length(innF));
+    glm::vec3 col = glm::vec3(3.0f*glm::length(innF) , 0.3f, 0.7f - glm::length(innF));
     writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
 
     //float a = cVar.in_testFloat;
@@ -187,9 +187,10 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
 
     glm::vec3 vel = readFromVBO(readBuff, x, y, fxVar.OffstVel);
 
-    glm::vec3 Fwind = cVar.WStr *
-        glm::vec3(1.0f + glm::sin(currPos.y * 1.3 + 1.9f*cVar.time), 0.2f* glm::sin(currPos.z * 7.1f),
-            0.5f*glm::cos(1.7f * currPos.x + 1.3f* cVar.time));
+    glm::vec3 Fwind = cVar.WStr*
+        glm::vec3(1.0f + cVar.WDir.x* glm::sin(cVar.offsCo.x* currPos.z + cVar.cyclCo.x* cVar.time),
+            cVar.WDir.y* glm::sin(cVar.offsCo.y * currPos.y + cVar.cyclCo.y* cVar.time),
+            cVar.WDir.z * glm::cos(cVar.offsCo.z * currPos.y + cVar.cyclCo.z * cVar.time));
     
     //***********************************
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;

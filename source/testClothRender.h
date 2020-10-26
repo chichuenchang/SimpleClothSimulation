@@ -10,9 +10,9 @@ public:
 	void initCloth(const unsigned int numVertsWidth,
 		const unsigned int numVertsHeight, GLuint attribLoc,
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
+	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
 	void CudaUpdateCloth(ClothConstant clothConst);
 	void DrawCloth();
-	void ReloadCloth();
 
 	void PassPolygonMode(int in_polygonMode);
 
@@ -50,7 +50,6 @@ private:
 
 	void fillBufferData();
 	void initVBO(GLuint AttribLocation);
-	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
 	void ResetClothBuffer();
 
 	bool pp;
