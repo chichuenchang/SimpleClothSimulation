@@ -207,8 +207,7 @@ void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
 	passPPbuffPtr(!pp ? d_testOutPtr1 : d_testOutPtr2, !pp ? d_testOutPtr2 : d_testOutPtr1);
 
 	//ping pong
-	Cloth_Launch_Kernel(!pp ? d_testOutPtr1: d_testOutPtr2, !pp? d_testOutPtr2 : d_testOutPtr1,
-		cloth_width, cloth_height);
+	Cloth_Launch_Kernel(cloth_width, cloth_height);
 	
 	pp = !pp;
 

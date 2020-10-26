@@ -19,7 +19,7 @@
 
 #include "util.hpp"
 
-void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, unsigned int mesh_width,
+void Cloth_Launch_Kernel(unsigned int mesh_width,
 	unsigned int mesh_height);
 void passPPbuffPtr(float* d_vbo1, float* d_vbo2);
 void CheckCudaErr(const char* msg);

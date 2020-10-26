@@ -6,9 +6,9 @@ ClothConstant cVar;
 __constant__
 FixedClothConstant fxVar;
 
-__device__
+__constant__
 float* ppReadBuff;
-__device__
+__constant__
 float* ppWriteBuff;
 
 
@@ -23,23 +23,12 @@ void CheckCudaErr(const char* msg)
     }
 }
 
-//void passPPbuffPtr(float** d_vbo1, float** d_vbo2) {
-//
-//    cudaMemcpyToSymbol(ppReadBuff, d_vbo1, sizeof(float*));
-//    CheckCudaErr("ppReadBuff pointer constant memory copy fail");
-//    cudaMemcpyToSymbol(ppWriteBuff, d_vbo2, sizeof(float*));
-//    CheckCudaErr("ppWriteBuff pointer constant memory copy fail");
-//}
 void passPPbuffPtr(float* d_vbo1, float* d_vbo2) {
 
     cudaMemcpyToSymbol(ppReadBuff, &d_vbo1, sizeof(float*));
-    //ppReadBuff = d_vbo1;
-    //ppWriteBuff = d_vbo2;
-    CheckCudaErr("cloth constant memory copy fail");
+    CheckCudaErr("pp read buffer pointer copy fail");
     cudaMemcpyToSymbol(ppWriteBuff, &d_vbo2, sizeof(float*));
-    CheckCudaErr("cloth constant memory copy fail");
-
-
+    CheckCudaErr("pp write buffer pointer copy fail");
 }
 
 void updateClothConst(ClothConstant *in_passVar) {
@@ -111,25 +100,25 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     //left
     if ((x) < 1) { innF += glm::vec3(0.0);}
     else {
-        tempV = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x - 1, y + 0, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.0f);
     }
     //right
     if ((x + 1) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 1, y + 0, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.0f);
     }
     //up
     if ((y) < 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 0, y - 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.0f);
     }
     //down
     if ((y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 0, y + 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.0f);
     }
 
@@ -137,25 +126,25 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     //left up
     if ((x) < 1 || (y) < 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x - 1, y - 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x - 1, y - 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.41421356237f);
     }
     //left down
     if ((x) < 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x - 1, y + 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x - 1, y + 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.41421356237f);
     }
     //right up
     if ((x + 1) > fxVar.width - 1 || (y) < 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 1, y - 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 1, y - 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.41421356237f);
     }
     //right down
     if ((x + 1) > fxVar.width - 1 || (y + 1) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 1, y + 1, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 1, y + 1, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 1.41421356237f);
     }
 
@@ -163,31 +152,31 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     //left 2
     if ((x) < 2) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x - 2, y + 0, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x - 2, y + 0, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 2.0f);
     }
     //right 2
     if ((x + 2) > fxVar.width - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 2, y + 0, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 2, y + 0, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 2.0f);
     }
     //up 2
     if ((y) < 2) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 0, y - 2, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 0, y - 2, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 2.0f);
     }
     //down 2
     if ((y + 2) > fxVar.height - 1) { innF += glm::vec3(0.0f); }
     else {
-        tempV = readFromVBO(readBuff, x + 0, y + 2, fxVar.OffstPos) - curP;
+        tempV = readFromVBO(ppReadBuff, x + 0, y + 2, fxVar.OffstPos) - curP;
         innF += constraintForce(tempV, 2.0f);
     }
 
     //color represents the magnitude of inner force
     glm::vec3 col = glm::vec3(3.0f*glm::length(innF) , 0.3f, 0.7f - glm::length(innF));
-    writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
+    writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
 
     //float a = cVar.in_testFloat;
     //glm::vec3 testcol = glm::vec3(0.0f, a, a);
@@ -209,9 +198,9 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
                             unsigned int x, unsigned int y  ) {
     
     
-    glm::vec3 innF = computeInnerForce(readBuff, writeBuff, x, y, currPos);
+    glm::vec3 innF = computeInnerForce(ppReadBuff, ppWriteBuff, x, y, currPos);
 
-    glm::vec3 vel = readFromVBO(readBuff, x, y, fxVar.OffstVel);
+    glm::vec3 vel = readFromVBO(ppReadBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 Fwind = cVar.WStr *
         glm::vec3(1.0f + cVar.WDir.x * glm::sin(cVar.offsCo.x * currPos.z + cVar.cyclCo.x * cVar.time),
@@ -273,29 +262,29 @@ glm::vec3 ComputeNomral(float* readBuff, unsigned int x, unsigned int y, glm::ve
     //left
     if ((x) < 1) { posL = curP; }
     else {
-        posL = readFromVBO(readBuff, x - 1, y + 0, fxVar.OffstPos);
+        posL = readFromVBO(ppReadBuff, x - 1, y + 0, fxVar.OffstPos);
     }
     //right
     if ((x + 1) > fxVar.width - 1) { posR = curP; }
     else {
-        posR = readFromVBO(readBuff, x + 1, y + 0, fxVar.OffstPos);
+        posR = readFromVBO(ppReadBuff, x + 1, y + 0, fxVar.OffstPos);
     }
     //up
     if ((y) < 1) {  posU = curP; }
     else {
-        posU = readFromVBO(readBuff, x + 0, y - 1, fxVar.OffstPos);
+        posU = readFromVBO(ppReadBuff, x + 0, y - 1, fxVar.OffstPos);
     }
     //down
     if ((y + 1) > fxVar.height - 1) {  posD = curP; }
     else {
-        posD = readFromVBO(readBuff, x + 0, y + 1, fxVar.OffstPos);
+        posD = readFromVBO(ppReadBuff, x + 0, y + 1, fxVar.OffstPos);
     }
     
     return glm::normalize(glm::cross((posR - posL), (posU - posD)));
 }
 
 __global__
-void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int width,
+void computeParticlePos_Kernel(unsigned int width,
     unsigned int height)
 {
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
@@ -313,11 +302,11 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     glm::vec3 Pos = readFromVBO(ppReadBuff, x, y, fxVar.OffstPos);
     glm::vec3 lastPos = readFromVBO(ppWriteBuff, x, y, fxVar.OffstPos);
     //normal
-    glm::vec3 normal = ComputeNomral(readBuff, x, y, Pos);
-    writeToVBO(normal, writeBuff, x, y, fxVar.OffstNm);
+    glm::vec3 normal = ComputeNomral(ppReadBuff, x, y, Pos);
+    writeToVBO(normal, ppWriteBuff, x, y, fxVar.OffstNm);
     
     //ForceNet
-    glm::vec3 ForceNet = computeForceNet(Pos, readBuff, writeBuff, x, y);
+    glm::vec3 ForceNet = computeForceNet(Pos, ppReadBuff, ppWriteBuff, x, y);
 
     //if (x == 20 && y == 30) {
 
@@ -333,9 +322,9 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     glm::vec3 Acc = ForceNet / cVar.M;
 
     //velocity
-    glm::vec3 lastV = readFromVBO(readBuff, x, y, fxVar.OffstVel);
+    glm::vec3 lastV = readFromVBO(ppReadBuff, x, y, fxVar.OffstVel);
     glm::vec3 Vel = lastV + Acc * cVar.stp;
-    writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), writeBuff, x, y, fxVar.OffstVel);
+    writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 nextPos;
 
@@ -359,12 +348,12 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
         //nextPos = RungeKutt(cVar.stp, Pos, Vel, Acc);
     }
 
-    writeToVBO(nextPos, writeBuff, x, y, fxVar.OffstPos);
+    writeToVBO(nextPos, ppWriteBuff, x, y, fxVar.OffstPos);
 
 }
 
 
-void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int mesh_width, const unsigned int mesh_height)
+void Cloth_Launch_Kernel( const unsigned int mesh_width, const unsigned int mesh_height)
 {
     dim3 block(32, 32, 1);
     dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
@@ -372,7 +361,7 @@ void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int m
     //std::cout << " readBuff = " << readBuff << std::endl;
     //std::cout << "ppReadBuff = " << ppReadBuff << std::endl;
 
-    computeParticlePos_Kernel << < grid, block >> > (readBuff, writeBuff, mesh_width,
+    computeParticlePos_Kernel << < grid, block >> > (mesh_width,
         mesh_height);
     CheckCudaErr("simple_vbo_kernel launch fail ");
     

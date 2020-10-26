@@ -16,7 +16,6 @@
 //6. clamp the length between particle
 
 #include "testClothRender.h"
-#include "util.hpp"
 #include "CudaInte.cuh"
 
 extern "C" {//force opengl run with nvidia card
@@ -126,6 +125,17 @@ void debugPrint() {
 	std::cout << "fxVar. vboStrdFlt = " << fxVar.vboStrdFlt << std::endl;
 }
 
+
+void updateCloth() {
+
+	cloth.updateClothKernel(cVar);
+	assert(glGetError() == GL_NO_ERROR);
+
+
+
+
+}
+
 int main() {
 
 	InitGL();
@@ -151,8 +161,7 @@ int main() {
 		//cVar.Fw = 0.4f*glm::vec3((1.0f+ glm::sin(cVar.a * 23.0f*currT)), 
 		//	glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
 
-		cloth.updateClothKernel(cVar);
-		assert(glGetError() == GL_NO_ERROR);
+		updateCloth();
 		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);
 
