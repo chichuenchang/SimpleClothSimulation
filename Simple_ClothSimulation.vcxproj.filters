@@ -56,6 +56,9 @@
     <ClInclude Include="source\util.hpp">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="source\BBox.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
@@ -86,6 +89,9 @@
       <Filter>source</Filter>
     </ClCompile>
     <ClCompile Include="source\util.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\BBox.cpp">
       <Filter>source</Filter>
     </ClCompile>
   </ItemGroup>

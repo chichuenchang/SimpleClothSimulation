@@ -147,7 +147,7 @@ int main() {
 		//cVar.Fw = 0.4f*glm::vec3((1.0f+ glm::sin(cVar.a * 23.0f*currT)), 
 		//	glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
 
-		cloth.CudaUpdateCloth(cVar);
+		cloth.updateClothKernel(cVar);
 		assert(glGetError() == GL_NO_ERROR);
 		cloth.DrawCloth();
 		assert(glGetError() == GL_NO_ERROR);

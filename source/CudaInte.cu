@@ -257,7 +257,7 @@ glm::vec3 ComputeNomral(float* readBuff, unsigned int x, unsigned int y, glm::ve
     return glm::normalize(glm::cross((posR - posL), (posU - posD)));
 }
 
-__global__ 
+__global__
 void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int width,
     unsigned int height, unsigned int vboStridInFloat)
 {

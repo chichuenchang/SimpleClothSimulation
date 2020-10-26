@@ -25,7 +25,6 @@ void main() {
 
 	outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f);
 
-
 	vec3 diffCol = dot(vsOut_normal, d_Lght) * col_Lght;
 
 

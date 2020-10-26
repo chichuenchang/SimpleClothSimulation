@@ -11,7 +11,7 @@ public:
 		const unsigned int numVertsHeight, GLuint attribLoc,
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
 	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst);
-	void CudaUpdateCloth(ClothConstant clothConst);
+	void updateClothKernel(ClothConstant clothConst);
 	void DrawCloth();
 
 	void PassPolygonMode(int in_polygonMode);

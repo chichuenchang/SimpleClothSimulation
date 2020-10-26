@@ -183,7 +183,7 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsWriteDiscard));
 }
 
-void testClothRender::CudaUpdateCloth(ClothConstant in_clothConst) {
+void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
 	
 	updateClothConst(&in_clothConst);
 
