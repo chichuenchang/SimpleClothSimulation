@@ -275,6 +275,10 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 		if (ImGui::Button("Reload Cloth")){
 			cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Freeze Frame")) {
+			cVar.frz = !cVar.frz;
+		}
 		
 		if (ImGui::CollapsingHeader("External Properties")) {
 			

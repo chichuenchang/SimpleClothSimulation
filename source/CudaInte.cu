@@ -283,6 +283,7 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     writeToVBO(Vel, writeBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 nextPos;
+
     if ((x == 0 && y == 0) || (x == 0 && y == height - 1) ||
         (x == 0 && y == height / 4) || (x == 0 && y == 3 * height / 4)
         ) {
@@ -293,7 +294,7 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     }
     else {
 
-        nextPos = VerletAlg(Pos, lastPos, Acc, cVar.stp);
+        nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
         //nextPos = RungeKutt(cVar.stp, Pos, Vel, Acc);
     }
 

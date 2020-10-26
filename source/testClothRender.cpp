@@ -157,6 +157,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.Dp = 0.15f;
 	clothConst.MxL = 0.04f;
 	clothConst.in_testFloat = 0.001f;
+	clothConst.frz = false;
 
 	fxClothConst.width = clothW;
 	fxClothConst.height = clothH;
@@ -170,6 +171,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	cloth_width = clothW;
 	cloth_height = clothH;
 
+	//make sure all are initialized
 	copyFixClothConst(&fxClothConst);
 	updateClothConst(&clothConst);
 }

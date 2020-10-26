@@ -37,10 +37,9 @@ struct ClothConstant {
 
 	float dt; //delta time each frame
 	float time; //system time
-
-
-
 	float in_testFloat;
+
+	bool frz;
 
 };
 
