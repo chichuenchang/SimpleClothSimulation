@@ -6,6 +6,11 @@ ClothConstant cVar;
 __constant__
 FixedClothConstant fxVar;
 
+__device__
+float* ppReadBuff;
+__device__
+float* ppWriteBuff;
+
 
 void CheckCudaErr(const char* msg)
 {
@@ -16,6 +21,25 @@ void CheckCudaErr(const char* msg)
         fprintf(stderr, "CUDA error: %s: %s. \n", msg, cudaGetErrorString(err));
         exit(EXIT_FAILURE);
     }
+}
+
+//void passPPbuffPtr(float** d_vbo1, float** d_vbo2) {
+//
+//    cudaMemcpyToSymbol(ppReadBuff, d_vbo1, sizeof(float*));
+//    CheckCudaErr("ppReadBuff pointer constant memory copy fail");
+//    cudaMemcpyToSymbol(ppWriteBuff, d_vbo2, sizeof(float*));
+//    CheckCudaErr("ppWriteBuff pointer constant memory copy fail");
+//}
+void passPPbuffPtr(float* d_vbo1, float* d_vbo2) {
+
+    cudaMemcpyToSymbol(ppReadBuff, &d_vbo1, sizeof(float*));
+    //ppReadBuff = d_vbo1;
+    //ppWriteBuff = d_vbo2;
+    CheckCudaErr("cloth constant memory copy fail");
+    cudaMemcpyToSymbol(ppWriteBuff, &d_vbo2, sizeof(float*));
+    CheckCudaErr("cloth constant memory copy fail");
+
+
 }
 
 void updateClothConst(ClothConstant *in_passVar) {
@@ -166,15 +190,17 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     writeToVBO(col, writeBuff, x, y, fxVar.OffstCol);
 
     //float a = cVar.in_testFloat;
-  /*  glm::vec3 testcol = glm::vec3(0.0f, a, a);
-    if (x == 0 && y == 0) {
+    //glm::vec3 testcol = glm::vec3(0.0f, a, a);
+    //if (x == 20 && y == 30) {
 
-        curr = a;
+    //    
 
-        printf(" innerForce = %f \n", glm::length(innF));
-        last = curr;
+    //    printf(" innerForce.x = %f \n", innF.x);
+    //    printf(" innerForce.y = %f \n", innF.y);
+    //    printf(" innerForce.z = %f \n", innF.z);
+    //    
 
-    }*/
+    //}
     return innF;
 }
 
@@ -187,21 +213,32 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
 
     glm::vec3 vel = readFromVBO(readBuff, x, y, fxVar.OffstVel);
 
-    glm::vec3 Fwind = cVar.WStr*
-        glm::vec3(1.0f + cVar.WDir.x* glm::sin(cVar.offsCo.x* currPos.z + cVar.cyclCo.x* cVar.time),
-            cVar.WDir.y* glm::sin(cVar.offsCo.y * currPos.y + cVar.cyclCo.y* cVar.time),
+    glm::vec3 Fwind = cVar.WStr *
+        glm::vec3(1.0f + cVar.WDir.x * glm::sin(cVar.offsCo.x * currPos.z + cVar.cyclCo.x * cVar.time),
+            cVar.WDir.y * glm::sin(cVar.offsCo.y * currPos.y + cVar.cyclCo.y * cVar.time),
             cVar.WDir.z * glm::cos(cVar.offsCo.z * currPos.y + cVar.cyclCo.z * cVar.time));
     
     //***********************************
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
     glm::vec3 netF =
-        1.0f * cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)
-        /*+ 1.0f * cVar.in_testFloat * cVar.Fw*/
-        + Fwind
-        -1.0f * cVar.a * vel * (glm::length(vel))
+        + 1.0f * cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)
+        + 1.0f * Fwind
+        - 1.0f * cVar.a * vel * (glm::length(vel))
         + 1.0f * innF
         - 1.0f * cVar.Dp * vel * (glm::length(vel));
-
+//
+//    if (x == 20 && y == 30) {
+//
+//    printf(" netF.x = %f \n", netF.x);
+//    printf(" netF.y = %f \n", netF.y);
+//    printf(" netF.z = %f \n", netF.z);
+//
+//    printf(" m = %f \n", cVar.M);
+//    printf(" gravity= %f \n", cVar.g);
+//
+//
+//}
+    
 
     return netF;
 }
@@ -259,15 +296,22 @@ glm::vec3 ComputeNomral(float* readBuff, unsigned int x, unsigned int y, glm::ve
 
 __global__
 void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int width,
-    unsigned int height, unsigned int vboStridInFloat)
+    unsigned int height)
 {
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x > width || y > height) return;
 
+   /*
+    if (x == 0 && y == 0) {
+
+        printf("vCar.frz = %d \n", cVar.frz);
+
+    }*/
+
     //current pos and last frame pos
-    glm::vec3 Pos = readFromVBO(readBuff, x, y, fxVar.OffstPos);
-    glm::vec3 lastPos = readFromVBO(writeBuff, x, y, fxVar.OffstPos);
+    glm::vec3 Pos = readFromVBO(ppReadBuff, x, y, fxVar.OffstPos);
+    glm::vec3 lastPos = readFromVBO(ppWriteBuff, x, y, fxVar.OffstPos);
     //normal
     glm::vec3 normal = ComputeNomral(readBuff, x, y, Pos);
     writeToVBO(normal, writeBuff, x, y, fxVar.OffstNm);
@@ -275,12 +319,23 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     //ForceNet
     glm::vec3 ForceNet = computeForceNet(Pos, readBuff, writeBuff, x, y);
 
+    //if (x == 20 && y == 30) {
+
+
+
+    //    printf(" ForceNet.x = %f \n", ForceNet.x);
+    //    printf(" ForceNet.y = %f \n", ForceNet.y);
+    //    printf(" ForceNet.z = %f \n", ForceNet.z);
+
+
+    //}
+
     glm::vec3 Acc = ForceNet / cVar.M;
 
     //velocity
     glm::vec3 lastV = readFromVBO(readBuff, x, y, fxVar.OffstVel);
     glm::vec3 Vel = lastV + Acc * cVar.stp;
-    writeToVBO(Vel, writeBuff, x, y, fxVar.OffstVel);
+    writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), writeBuff, x, y, fxVar.OffstVel);
 
     glm::vec3 nextPos;
 
@@ -294,6 +349,12 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
     }
     else {
 
+        //if (cVar.frz) {
+
+        //    nextPos = Pos;
+        //}
+        //else nextPos = VerletAlg(Pos, lastPos, Acc, cVar.stp);
+
         nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
         //nextPos = RungeKutt(cVar.stp, Pos, Vel, Acc);
     }
@@ -303,14 +364,16 @@ void computeParticlePos_Kernel(float* readBuff, float* writeBuff, unsigned int w
 }
 
 
-void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int mesh_width, const unsigned int mesh_height,
-    unsigned int vboStridInFloat)
+void Cloth_Launch_Kernel(float* readBuff, float* writeBuff, const unsigned int mesh_width, const unsigned int mesh_height)
 {
- 
     dim3 block(32, 32, 1);
     dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
+
+    //std::cout << " readBuff = " << readBuff << std::endl;
+    //std::cout << "ppReadBuff = " << ppReadBuff << std::endl;
+
     computeParticlePos_Kernel << < grid, block >> > (readBuff, writeBuff, mesh_width,
-        mesh_height, vboStridInFloat);
+        mesh_height);
     CheckCudaErr("simple_vbo_kernel launch fail ");
     
     cudaDeviceSynchronize();

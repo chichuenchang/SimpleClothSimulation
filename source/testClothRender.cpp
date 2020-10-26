@@ -156,7 +156,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.a = 0.15f;
 	clothConst.Dp = 0.15f;
 	clothConst.MxL = 0.04f;
-	clothConst.in_testFloat = 0.001f;
+	clothConst.in_testFloat = 0.000f;
 	clothConst.frz = false;
 
 	fxClothConst.width = clothW;
@@ -204,9 +204,11 @@ void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
 	checkCudaErrors(cudaGraphicsMapResources(1, &CudaVboRes2, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_testOutPtr2, &num_bytes2, CudaVboRes2));
 
+	passPPbuffPtr(!pp ? d_testOutPtr1 : d_testOutPtr2, !pp ? d_testOutPtr2 : d_testOutPtr1);
+
 	//ping pong
 	Cloth_Launch_Kernel(!pp ? d_testOutPtr1: d_testOutPtr2, !pp? d_testOutPtr2 : d_testOutPtr1,
-		cloth_width, cloth_height, VBOStrideInFloat);
+		cloth_width, cloth_height);
 	
 	pp = !pp;
 

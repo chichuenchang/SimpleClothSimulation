@@ -34,8 +34,8 @@ bool show_demo_window = true;
 // camera
 bool camRot = false;
 bool pan = false;
-glm::vec2 panCam = glm::vec2(0.0f);
-glm::vec3 camCoords = glm::vec3(0.0, 0.0, -5.0);
+glm::vec2 panCam = glm::vec2(4.77f, -1.53f);
+glm::vec3 camCoords = glm::vec3(0.0, 0.0, -8.3);
 glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
 
@@ -170,7 +170,7 @@ int main() {
 //GLFW definition
 void scrollCallback(GLFWwindow* w, double x, double y) {
 	float offset = (y > 0) ? 0.1f : -0.1f;
-	camCoords.z = glm::clamp(camCoords.z + offset, -10.0f, -5.0f);
+	camCoords.z = glm::clamp(camCoords.z + offset, -20.0f, -1.0f);
 }
 
 void keyCallback(GLFWwindow* w, int key, int scancode, int action, int mode) {
@@ -270,7 +270,7 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);
 
-		ImGui::InputFloat("Time Step", &cVar.stp, 0.001f, 0.009f, "Time Step = %.3f");
+		ImGui::SliderFloat("Time Step", &cVar.stp, 0.001f, 0.009f, "Time Step = %.3f");
 		
 		if (ImGui::Button("Reload Cloth")){
 			cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
@@ -330,7 +330,6 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			ImGui::RadioButton("Normal", &ColorMode, 1); ImGui::SameLine();
 			ImGui::RadioButton("UV", &ColorMode, 2); ImGui::SameLine();
 			ImGui::RadioButton("Default", &ColorMode, 3); 
-
 
 		}
 
