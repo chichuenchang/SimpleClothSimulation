@@ -17,6 +17,8 @@
 
 #include "testClothRender.h"
 #include "CudaInte.cuh"
+#include "CustomObj.h"
+#include "ObjData.h"
 
 extern "C" {//force opengl run with nvidia card
 	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
@@ -39,25 +41,25 @@ glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
 
 glm::vec2 msScrnCrdLast = glm::vec2(0.0f);
-//time
-float time;
 
 //shader ID
 GLuint shaderProgram;
 
 //cloth object
-//ClothRender cloth;
-GLuint attribLoc = 8;
+GLuint attribLoc = 0;
 testClothRender cloth;
 const unsigned int clothWidth = 32;
 const unsigned int clothHeight = 64;
+
+
+std::vector<CustomObj*> objLst;
 
 //constants passed to cuda
 ClothConstant cVar;
 FixedClothConstant fxVar;
 //display option variable
 int polygonMode = 0;
-int ColorMode = 3;
+//int ColorMode = 3;
 
 ///////////////////////////////////////////////////////////////////////////////
 // GLFW window callbacks--------------------------------------------------------------------
@@ -70,36 +72,14 @@ void initGLFW(GLFWwindow** win, int winWidth, int winHeight);
 void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst);
 ////////////////////////////////////////////////////////////////////////////
 
-void ComputeTransform(glm::mat4 &returnTransform) {
-
-	float aspect = (float)width / (float)height;
-	glm::mat4 proj = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
-	glm::mat4 view = glm::lookAt(glm::vec3(5.0f, -1.0f * clothWidth * 0.06f, 10.0f),
-		glm::vec3(0.0f, -1.0f * clothWidth*0.06f , clothHeight *0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
-	glm::mat4 trans = glm::translate(glm::mat4(1.0f), { panCam.x, panCam.y, -camCoords.z });
-	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(camCoords.y), { 1.0f, 0.0f, 0.0f });
-	rot = glm::rotate(rot, glm::radians(camCoords.x), { 0.0f, 1.0f, 0.0f });
-	glm::mat4 scaler = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
-	returnTransform = proj * view * trans * rot * scaler;
-}
-
 void PassUniform() {
 	//uniform location
-	GLuint xform_uloc = 0;
+
 	GLuint time_uloc = 1;
 	GLuint ColMod_uloc = 3;
-
-
-	//transformation
-	glm::mat4 transform;
-	ComputeTransform(transform);
 	
-	//pass the uniform  
-	glUniformMatrix4fv(xform_uloc, 1, GL_FALSE, glm::value_ptr(transform));
-	time = glfwGetTime();
-	glUniform1f(time_uloc, time);
-	glUniform1i(ColMod_uloc, ColorMode);
-
+	glUniform1f(time_uloc, glfwGetTime());
+	glUniform1i(ColMod_uloc, cVar.colorMode);
 }
 
 void InitGL() {
@@ -126,47 +106,116 @@ void debugPrint() {
 }
 
 
+void initScene() {
+
+	cloth.initClothConstValue(cVar, fxVar, clothWidth, clothHeight);
+	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
+	
+	//prepare data
+	ObjData* d = new ObjData;
+	d->objData(glm::vec3(0.3f, -0.5f, 0.5f), 0.3f);
+	//gen obj buffer
+	//CustomObj* cube = new CustomObj;
+	//cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
+	//objLst.push_back(cube);
+	//
+	//CustomObj* quad = new CustomObj;
+	//quad->CreateVbo(d->vPtr_q, d->indPtr_q, d->nFlt_q, d->nInd_q);
+	//objLst.push_back(quad);
+
+	CustomObj* sphere = new CustomObj;
+	sphere->CreateVboVector(d->vPtr_s, d->indPtr_s, d->nFlt_s, d->nInd_s);
+	objLst.push_back(sphere);
+
+}
+
 void updateCloth() {
+	//pass constant before launchKernel
+	cloth.passVarsToKernel(cVar);
 
-	cloth.updateClothKernel(cVar);
+	std::vector<CustomObj*>::iterator i;
+	for (i = objLst.begin(); i != objLst.end(); i++) {
+		(*i)->passVboPtrKernel();
+	}
+
+	//kernel helper is defined in .cuh
+	Cloth_Launch_Kernel(clothWidth, clothHeight);
+
+	for (i = objLst.begin(); i != objLst.end(); i++) {
+		(*i)->unmapResource();
+	}
+
+
+	//swith pp status and unmap cuda resource
+	cloth.unmapResource();
+}
+
+void updateScene() {
+	//pass to shader	
+	PassUniform();
+
+	//delta time
+	static float lastT = 0.0f, currT = 0.0f;
+	cVar.dt = GetDeltaT(currT, lastT);
+	cVar.time = currT;
+
+	//cloth
+	updateCloth();
+
+}
+
+void drawScene() {
+
+	GLuint model_uloc = 4;
+	GLuint view_uloc = 5;
+	GLuint project_uloc = 6;
+
+	//transformation
+	float aspect = (float)width / (float)height;
+	glm::mat4 proj = glm::perspective(45.0f, aspect, 0.1f, 100.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(5.0f, -1.0f * clothWidth * 0.06f, 10.0f),
+		glm::vec3(0.0f, -1.0f * clothWidth * 0.06f, clothHeight * 0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+	glm::mat4 trans = glm::translate(glm::mat4(1.0f), { panCam.x, panCam.y, -camCoords.z });
+	glm::mat4 rot = glm::rotate(glm::mat4(1.0f), glm::radians(camCoords.y), { 1.0f, 0.0f, 0.0f });
+	rot = glm::rotate(rot, glm::radians(camCoords.x), { 0.0f, 1.0f, 0.0f });
+	glm::mat4 scaler = glm::scale(glm::mat4(1.0f), glm::vec3(1.0f));
+	glm::mat4 model = trans * rot * scaler;
+
+	//pass the uniform  
+	glUniformMatrix4fv(model_uloc, 1, GL_FALSE, glm::value_ptr(model));
+	glUniformMatrix4fv(view_uloc, 1, GL_FALSE, glm::value_ptr(view));
+	glUniformMatrix4fv(project_uloc, 1, GL_FALSE, glm::value_ptr(proj));
+
+	cloth.DrawCloth();
 	assert(glGetError() == GL_NO_ERROR);
+	//customized obj 
+	std::vector<CustomObj*>::iterator i;
+	for (i = objLst.begin(); i != objLst.end(); i++) {
+		(*i)->DrawObjStrip();
+		assert(glGetError() == GL_NO_ERROR);
+	}
 
-
-
+	//bBox
+	//set bbox transformation and pass
+	//glUniformMatrix4fv(model_uloc, 1, GL_FALSE, glm::value_ptr(model));
+	//call draw cloth here
 
 }
 
 int main() {
-
 	InitGL();
-	cloth.initClothConstValue(cVar, fxVar, clothWidth, clothHeight);
-	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
-
-	//delta time
-	float lastT = 0.0f, currT =0.0f;
-
+	initScene();
 	//display
 	while (!glfwWindowShouldClose(window)) {
  		glfwPollEvents();
 		glClearColor(clear_color[0], clear_color[1], clear_color[2], 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 		glUseProgram(shaderProgram);
-	
-		PassUniform();
-		
-		cVar.dt = GetDeltaT(currT, lastT);
-		cVar.time = currT;
-		//fw from the paper
-		//cVar.Fw = 0.4f*glm::vec3((1.0f+ glm::sin(cVar.a * 23.0f*currT)), 
-		//	glm::cos(cVar.a * 37.0f * currT), glm::sin(7 * cVar.a * 27.0f * currT));
 
-		updateCloth();
-		cloth.DrawCloth();
-		assert(glGetError() == GL_NO_ERROR);
+		updateScene();
+		drawScene();
 
 		drawGui(clear_color, show_demo_window, &cVar);
-
 		glUseProgram(0);
 		glfwSwapBuffers(window);
 	}
@@ -291,7 +340,7 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 		
 		if (ImGui::CollapsingHeader("External Properties")) {
 			
-			ImGui::InputFloat("Folding", &clothConst->in_testFloat, -1.000f, 1.000f, "Folding = %.3f");
+			ImGui::SliderFloat("Folding", &clothConst->folding, -1.000f, 1.000f, "Folding = %.3f");
 			
 			ImGui::SliderFloat("Wind Str", &clothConst->WStr, 0.0f, 0.1f, "Wind Str = %.3f");
 			if (ImGui::TreeNode("Wind Detail")) {
@@ -335,10 +384,13 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			}
 			
 			ImGui::Text("Shading Color");
-			ImGui::RadioButton("Net Force", &ColorMode, 0); ImGui::SameLine();
-			ImGui::RadioButton("Normal", &ColorMode, 1); ImGui::SameLine();
-			ImGui::RadioButton("UV", &ColorMode, 2); ImGui::SameLine();
-			ImGui::RadioButton("Default", &ColorMode, 3); 
+			ImGui::RadioButton("Net Force", &cVar.colorMode, 0); ImGui::SameLine();
+			ImGui::RadioButton("Normal", &cVar.colorMode, 1); ImGui::SameLine();
+			ImGui::RadioButton("UV", &cVar.colorMode, 2); ImGui::SameLine();
+			ImGui::RadioButton("Point Col", &cVar.colorMode, 3); ImGui::SameLine();
+			//TO DO
+			//ImGui::RadioButton("Texture", &cVar.colorMode, 4);
+			//ImGui::RadioButton("BB Sang", &cVar.colorMode, 4);
 
 		}
 

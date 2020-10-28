@@ -12,7 +12,11 @@ public:
 		ClothConstant& clthConst, FixedClothConstant& fxConst);
 	void initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst,
 		unsigned int clothW, unsigned int clothH);
-	void updateClothKernel(ClothConstant clothConst);
+	void passVarsToKernel(ClothConstant clothConst);
+	
+	void unmapResource();
+	
+	
 	void DrawCloth();
 
 	void PassPolygonMode(int in_polygonMode);

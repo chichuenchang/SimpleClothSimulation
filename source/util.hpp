@@ -37,9 +37,11 @@ struct ClothConstant {
 
 	float dt; //delta time each frame
 	float time; //system time
-	float in_testFloat;
+	float folding;
 
 	bool frz;
+
+	int colorMode;
 
 };
 
@@ -53,6 +55,14 @@ struct FixedClothConstant {
 	unsigned int OffstCol;
 	unsigned int OffstVel;
 
+};
+
+struct objConst {
+	unsigned int vboStrdFlt;
+	unsigned int OffstPos;
+	unsigned int OffstNm;
+	unsigned int OffstCol;
+	unsigned int nVerts;
 };
 
 

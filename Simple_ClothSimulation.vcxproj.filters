@@ -56,7 +56,10 @@
     <ClInclude Include="source\util.hpp">
       <Filter>header</Filter>
     </ClInclude>
-    <ClInclude Include="source\BBox.h">
+    <ClInclude Include="source\CustomObj.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="source\ObjData.h">
       <Filter>header</Filter>
     </ClInclude>
   </ItemGroup>
@@ -91,7 +94,10 @@
     <ClCompile Include="source\util.cpp">
       <Filter>source</Filter>
     </ClCompile>
-    <ClCompile Include="source\BBox.cpp">
+    <ClCompile Include="source\CustomObj.cpp">
+      <Filter>source</Filter>
+    </ClCompile>
+    <ClCompile Include="source\ObjData.cpp">
       <Filter>source</Filter>
     </ClCompile>
   </ItemGroup>

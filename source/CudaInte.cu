@@ -1,16 +1,18 @@
 
 #include "CudaInte.cuh"
-
+//cloth const
 __constant__ 
 ClothConstant cVar;
 __constant__
 FixedClothConstant fxVar;
-
 __constant__
-float* ppReadBuff;
-__constant__
-float* ppWriteBuff;
+float* ppReadBuff, *ppWriteBuff;
 
+//customized obj
+__constant__
+float* objBuff;
+__constant__
+objConst objVar;
 
 void CheckCudaErr(const char* msg)
 {
@@ -22,9 +24,20 @@ void CheckCudaErr(const char* msg)
         exit(EXIT_FAILURE);
     }
 }
+//my obj
+void passCstmObjPtr(float* d_vbo) {
+    cudaMemcpyToSymbol(objBuff, &d_vbo, sizeof(float*));
+    CheckCudaErr("sphere vbo pointer copy fail");
+}
 
+void cpyObjConst(objConst* in_Var) {
+
+    cudaMemcpyToSymbol(objVar, in_Var, sizeof(objConst));
+    CheckCudaErr("obj constant memory copy fail");
+}
+
+//cloth
 void passPPbuffPtr(float* d_vbo1, float* d_vbo2) {
-
     cudaMemcpyToSymbol(ppReadBuff, &d_vbo1, sizeof(float*));
     CheckCudaErr("pp read buffer pointer copy fail");
     cudaMemcpyToSymbol(ppWriteBuff, &d_vbo2, sizeof(float*));
@@ -79,7 +92,7 @@ glm::vec3 constraintForce(glm::vec3 p_to_nbor, float lCoeff) {
     }
     else {
         return glm::normalize(p_to_nbor) * (cVar.k * (lCoeff * cVar.MxL - lCoeff * cVar.rLen) +
-            cVar.k * 1.3f * (L - lCoeff*cVar.MxL));
+            cVar.k * 1.4f * (L - lCoeff*cVar.MxL));
     }
 }
 
@@ -175,21 +188,35 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     }
 
     //color represents the magnitude of inner force
-    glm::vec3 col = glm::vec3(3.0f*glm::length(innF) , 0.3f, 0.7f - glm::length(innF));
-    writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
+    if (cVar.colorMode == 0) {
+        glm::vec3 col = glm::vec3(4.0f*glm::length(innF) , 0.3f, 0.8f - 3.0f*glm::length(innF));
+        writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
+    }
+    else { writeToVBO(glm::vec3(0.961f, 0.961f, 0.863f), ppWriteBuff, x, y, fxVar.OffstCol); }
 
     //float a = cVar.in_testFloat;
     //glm::vec3 testcol = glm::vec3(0.0f, a, a);
-    //if (x == 20 && y == 30) {
+    if (x == 20 && y == 30) {
 
-    //    
+        printf(" objVar.stride = %d \n", objVar.vboStrdFlt);
+        printf(" objVar.offset pos= %d \n", objVar.OffstPos);
+        printf(" objVar.offset normal = %d \n", objVar.OffstNm);
+        printf(" objVar.offset color = %d \n", objVar.OffstCol);
+        printf(" objVar.nVerts = %d \n", objVar.nVerts);
 
-    //    printf(" innerForce.x = %f \n", innF.x);
-    //    printf(" innerForce.y = %f \n", innF.y);
-    //    printf(" innerForce.z = %f \n", innF.z);
-    //    
+        for (int i = 0; i < objVar.nVerts; i++) {
 
-    //}
+            objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 0] += 0.1f;
+            objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 1] += 0.1f;
+
+        }
+
+       // objBuff[9] += 0.1f;
+        objBuff[11] += 0.1f;
+        //objBuff[8] += 0.1f;
+
+
+    }
     return innF;
 }
 
@@ -312,9 +339,10 @@ void computeParticlePos_Kernel(unsigned int width,
 
 
 
-    //    printf(" ForceNet.x = %f \n", ForceNet.x);
-    //    printf(" ForceNet.y = %f \n", ForceNet.y);
-    //    printf(" ForceNet.z = %f \n", ForceNet.z);
+    //    printf(" pp read Buff = %d \n", ppReadBuff);
+    //    printf(" pp write buff = %d \n", ppWriteBuff);
+    //    printf(" ppbuff[0] = %d \n", ppbuff[0]);
+    //    printf(" ppbuff[1] = %d \n", ppbuff[1]);
 
 
     //}
@@ -334,7 +362,7 @@ void computeParticlePos_Kernel(unsigned int width,
 
         glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.5f * fxVar.height / 10.0f) - Pos;
 
-        nextPos = Pos + 0.001f* dir * cVar.in_testFloat;
+        nextPos = Pos + 0.001f* dir * cVar.folding;
     }
     else {
 

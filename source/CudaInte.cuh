@@ -21,7 +21,12 @@
 
 void Cloth_Launch_Kernel(unsigned int mesh_width,
 	unsigned int mesh_height);
-void passPPbuffPtr(float* d_vbo1, float* d_vbo2);
 void CheckCudaErr(const char* msg);
+//from cloth to kernel
+void passPPbuffPtr(float* d_vbo1, float* d_vbo2);
 void updateClothConst(ClothConstant* in_passVar);
 void copyFixClothConst(FixedClothConstant* in_fxConst);
+
+//from customized obj to kernel
+void passCstmObjPtr(float* d_vbo);
+void cpyObjConst(objConst* in_Var);

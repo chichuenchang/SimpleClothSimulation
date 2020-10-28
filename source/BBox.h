@@ -5,14 +5,17 @@ class BBox {
 
 public:
 	BBox();
-	void initBBox();
+	void initBBox(glm::vec3 a, glm::vec3 b);
 	void drawBBox();
 
 	void updateBBoxKenel();
 
 
 private:
-	glm::vec3 boxDim;
+
+	glm::vec3 pMin, pMax;
+
+	glm::vec3 bbDim;
 
 	GLuint BBVao;
 	GLuint BBVbo;
@@ -21,4 +24,6 @@ private:
 	GLuint strideBBVbo;
 
 
+	void checkInputValidity(glm::vec3 a, glm::vec3 b);
+	void fillVBOData();
 };

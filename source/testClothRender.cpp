@@ -89,8 +89,8 @@ void testClothRender::fillBufferData() {
 		for (int j = 0; j < cloth_height; j++) {
 			testGrid.push_back({glm::vec3((float)i * 0.02f, 0.0f, (float)j * 0.02f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
-								glm::vec3(1.0f, 1.0f, 0.0f),//megenta
-								glm::vec3(0.0f, 0.0f, 0.0f),//p color megenta
+								glm::vec3(0.0f, 1.0f, 1.0f),//
+								glm::vec3(0.961f, 0.961f, 0.863f),//p color megenta
 								glm::vec3(0.0f) });	//for kernel to write velocity
 
 		}
@@ -149,15 +149,16 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.g = -10.0f;
 	clothConst.k = 100.0f;
 	clothConst.rLen = 0.02f;
+	clothConst.MxL = 0.04f;
 
 	clothConst.stp = 0.004f;
 	clothConst.dt = 0.000005f;
 	clothConst.time = 0.0f;
 	clothConst.a = 0.15f;
 	clothConst.Dp = 0.15f;
-	clothConst.MxL = 0.04f;
-	clothConst.in_testFloat = 0.000f;
+	clothConst.folding = 0.000f;
 	clothConst.frz = false;
+	clothConst.colorMode = 3;
 
 	fxClothConst.width = clothW;
 	fxClothConst.height = clothH;
@@ -188,7 +189,7 @@ void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsNone));
 }
 
-void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
+void testClothRender::passVarsToKernel(ClothConstant in_clothConst) {
 	
 	updateClothConst(&in_clothConst);
 
@@ -206,14 +207,14 @@ void testClothRender::updateClothKernel(ClothConstant in_clothConst) {
 
 	passPPbuffPtr(!pp ? d_testOutPtr1 : d_testOutPtr2, !pp ? d_testOutPtr2 : d_testOutPtr1);
 
-	//ping pong
-	Cloth_Launch_Kernel(cloth_width, cloth_height);
-	
+}
+
+void testClothRender::unmapResource() {
+
 	pp = !pp;
 
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes1, 0));
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &CudaVboRes2, 0));
-
 }
 
 void testClothRender::PassPolygonMode(int in_polygonMode) {
