@@ -48,6 +48,8 @@ GLuint shaderProgram;
 //cloth object
 GLuint attribLoc = 0;
 testClothRender cloth;
+
+CustomObj* cube = new CustomObj;
 const unsigned int clothWidth = 32;
 const unsigned int clothHeight = 64;
 
@@ -113,19 +115,29 @@ void initScene() {
 	
 	//prepare data
 	ObjData* d = new ObjData;
-	d->objData(glm::vec3(0.3f, -0.5f, 0.5f), 0.3f);
+	d->objData(glm::vec3(0.0f), 0.3f);
 	//gen obj buffer
-	//CustomObj* cube = new CustomObj;
-	//cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
-	//objLst.push_back(cube);
-	//
-	//CustomObj* quad = new CustomObj;
-	//quad->CreateVbo(d->vPtr_q, d->indPtr_q, d->nFlt_q, d->nInd_q);
-	//objLst.push_back(quad);
-
+	
+	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
+	objLst.push_back(cube);
+	
+	/*CustomObj* quad = new CustomObj;
+	quad->CreateVbo(d->vPtr_q, d->indPtr_q, d->nFlt_q, d->nInd_q);
+	objLst.push_back(quad);
 	CustomObj* sphere = new CustomObj;
 	sphere->CreateVboVector(d->vPtr_s, d->indPtr_s, d->nFlt_s, d->nInd_s);
-	objLst.push_back(sphere);
+	objLst.push_back(sphere);*/
+
+
+	//pass the sphere vbo to kernel
+	cube->passObjPtrToKernel();
+
+	//call kernel precompute normal
+	ComptObjNormal_Kernel();
+
+	//call unmap resource after kernel
+	cube->unmapResource();
+
 
 }
 
@@ -133,21 +145,14 @@ void updateCloth() {
 	//pass constant before launchKernel
 	cloth.passVarsToKernel(cVar);
 
-	std::vector<CustomObj*>::iterator i;
-	for (i = objLst.begin(); i != objLst.end(); i++) {
-		(*i)->passVboPtrKernel();
-	}
+	//cube->passObjPtrToKernel();
 
-	//kernel helper is defined in .cuh
+	//kernel has to know the obj vbo to do collision
 	Cloth_Launch_Kernel(clothWidth, clothHeight);
-
-	for (i = objLst.begin(); i != objLst.end(); i++) {
-		(*i)->unmapResource();
-	}
-
 
 	//swith pp status and unmap cuda resource
 	cloth.unmapResource();
+	//cube->unmapResource();
 }
 
 void updateScene() {
@@ -188,18 +193,14 @@ void drawScene() {
 
 	cloth.DrawCloth();
 	assert(glGetError() == GL_NO_ERROR);
+
+
 	//customized obj 
 	std::vector<CustomObj*>::iterator i;
 	for (i = objLst.begin(); i != objLst.end(); i++) {
 		(*i)->DrawObjStrip();
 		assert(glGetError() == GL_NO_ERROR);
 	}
-
-	//bBox
-	//set bbox transformation and pass
-	//glUniformMatrix4fv(model_uloc, 1, GL_FALSE, glm::value_ptr(model));
-	//call draw cloth here
-
 }
 
 int main() {
@@ -364,8 +365,8 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 			ImGui::SliderFloat("Gravity", &cVar.g, -50.0, -0.0f, "Gravity = %.3f");
 			ImGui::InputFloat("Rest Length", &cVar.rLen, 0.010f, 0.200f, "Rest Length = %.3f");
 			ImGui::InputFloat("Max Length", &cVar.MxL, 0.040f, 0.250f, "Max Length = %.3f");
-			ImGui::SliderFloat("Air Constant", &cVar.a, 0.01, 0.5f, "Air Constant = %.3f");
-			ImGui::SliderFloat("Damping", &cVar.Dp, 0.01, 0.5f, "Damping = %.3f");
+			ImGui::SliderFloat("Air Constant", &cVar.a, 0.01, 2000.0f, "Air Constant = %.3f");
+			ImGui::SliderFloat("Damping", &cVar.Dp, 0.01, 3000.0f, "Damping = %.3f");
 		}
 
 

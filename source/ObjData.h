@@ -18,6 +18,7 @@ public:
 	unsigned int nFlt_q;
 	unsigned int nInd_q;
 
+	//sphere data used vector
 	std::vector<float> vPtr_s;
 	std::vector<unsigned int> indPtr_s;
 	unsigned int nFlt_s;

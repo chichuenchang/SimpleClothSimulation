@@ -71,6 +71,8 @@ void testClothRender::setUpClothBuffer() {
 	glEnableVertexAttribArray(inAttributeLocation + 3);//layout location = attribLoc in vs
 	glVertexAttribPointer(inAttributeLocation + 3, 3, GL_FLOAT, GL_FALSE, sizeof(testVert), (GLvoid*)offsetof(testVert, col));
 
+
+
 	unsigned int AssignIBO2;
 	glGenBuffers(1, &AssignIBO2);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, AssignIBO2);
@@ -91,7 +93,7 @@ void testClothRender::fillBufferData() {
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(0.0f, 1.0f, 1.0f),//
 								glm::vec3(0.961f, 0.961f, 0.863f),//p color megenta
-								glm::vec3(0.0f) });	//for kernel to write velocity
+								glm::vec3(0.0f)});	//for kernel to write velocity
 
 		}
 	}
@@ -140,6 +142,28 @@ void testClothRender::initVBO(GLuint in_attribLoc) {
 
 void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothConstant& fxClothConst,
 	unsigned int clothW, unsigned int clothH) {
+	
+	//clothConst.WStr = 0.0f;
+	//clothConst.WDir = glm::vec3(0.874f, 0.68f, 0.01f);
+	//clothConst.offsCo = glm::vec3(19.347f, 7.36f, 1.06f);
+	//clothConst.cyclCo = glm::vec3(3.201f, 1.71f, 1.92f);
+
+	//clothConst.M = 0.001f;
+	//clothConst.g = -10.0f;
+	//clothConst.k = 45.0f;
+	//clothConst.rLen = 0.02f;
+	//clothConst.MxL = 0.025f;
+
+	//clothConst.stp = 0.000001f;
+	//clothConst.dt = 0.000005f;
+	//clothConst.time = 0.0f;
+	//clothConst.a = 1500.0f;
+	//clothConst.Dp = 2000.0f;
+	//clothConst.folding = 0.000f;
+	//clothConst.frz = false;
+	//clothConst.colorMode = 3;
+	
+	//verlet
 	clothConst.WStr = 0.0f;
 	clothConst.WDir = glm::vec3(0.874f, 0.68f, 0.01f);
 	clothConst.offsCo = glm::vec3(19.347f, 7.36f, 1.06f);

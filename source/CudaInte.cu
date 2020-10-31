@@ -12,7 +12,12 @@ float* ppReadBuff, *ppWriteBuff;
 __constant__
 float* objBuff;
 __constant__
+unsigned int* objIndBuff;
+__constant__
 objConst objVar;
+__constant__
+glm::vec3* objN;
+
 
 void CheckCudaErr(const char* msg)
 {
@@ -24,10 +29,15 @@ void CheckCudaErr(const char* msg)
         exit(EXIT_FAILURE);
     }
 }
-//my obj
-void passCstmObjPtr(float* d_vbo) {
+//copy ptr to kernel
+void passCstmObjPtr(float* d_vbo, unsigned int* d_ibo, glm::vec3* d_objN) {
+    
     cudaMemcpyToSymbol(objBuff, &d_vbo, sizeof(float*));
     CheckCudaErr("sphere vbo pointer copy fail");
+    cudaMemcpyToSymbol(objIndBuff, &d_ibo, sizeof(float*));
+    CheckCudaErr("sphere vbo pointer copy fail");
+    cudaMemcpyToSymbol(objN, &d_objN, sizeof(float*));
+
 }
 
 void cpyObjConst(objConst* in_Var) {
@@ -75,6 +85,17 @@ void writeToVBO(glm::vec3 outPos, float* d_vboPtr,
     d_vboPtr[(ind_x * fxVar.height + ind_y) * fxVar.vboStrdFlt + offsetInEachVBOElement + 1] = outPos.y;
     d_vboPtr[(ind_x * fxVar.height + ind_y) * fxVar.vboStrdFlt + offsetInEachVBOElement + 2] = outPos.z;
 }
+
+__device__
+glm::vec3 readObjVbo(int threadInd, float* objVbo, unsigned int* objIbo, unsigned int strdFlt,
+    unsigned int offst) {
+
+    return glm::vec3(
+        objVbo[objIbo[threadInd] * strdFlt + offst + 0],
+        objVbo[objIbo[threadInd] * strdFlt + offst + 1],
+        objVbo[objIbo[threadInd] * strdFlt + offst + 2]);
+}
+
 
 __device__
 float length(glm::vec3 a, glm::vec3 b) {
@@ -187,32 +208,38 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
         innF += constraintForce(tempV, 2.0f);
     }
 
-    //color represents the magnitude of inner force
-    if (cVar.colorMode == 0) {
-        glm::vec3 col = glm::vec3(4.0f*glm::length(innF) , 0.3f, 0.8f - 3.0f*glm::length(innF));
-        writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
-    }
-    else { writeToVBO(glm::vec3(0.961f, 0.961f, 0.863f), ppWriteBuff, x, y, fxVar.OffstCol); }
+    //for color mode
+    //if (cVar.colorMode == 0) {
+    //    glm::vec3 col = glm::vec3(4.0f*glm::length(innF) , 0.3f, 0.8f - 3.0f*glm::length(innF));
+    //    writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
+    //}
+    //else { writeToVBO(glm::vec3(0.961f, 0.961f, 0.863f), ppWriteBuff, x, y, fxVar.OffstCol); }
+    /////////////////////////////////////////////////////////////////////////////////
+
+
+
+
 
     //float a = cVar.in_testFloat;
     //glm::vec3 testcol = glm::vec3(0.0f, a, a);
-    if (x == 20 && y == 30) {
+    if (x == 0 && y == 0) {
 
-        printf(" objVar.stride = %d \n", objVar.vboStrdFlt);
+ /*       printf(" objVar.stride = %d \n", objVar.vboStrdFlt);
         printf(" objVar.offset pos= %d \n", objVar.OffstPos);
         printf(" objVar.offset normal = %d \n", objVar.OffstNm);
         printf(" objVar.offset color = %d \n", objVar.OffstCol);
         printf(" objVar.nVerts = %d \n", objVar.nVerts);
+        printf(" objVar.nInd = %d \n", objVar.nInd);*/
 
-        for (int i = 0; i < objVar.nVerts; i++) {
+        //for (int i = 0; i < objVar.nVerts; i++) {
 
-            objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 0] += 0.1f;
-            objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 1] += 0.1f;
+        //    objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 0] = glm::sin(cVar.time);
+        //    objBuff[i * objVar.vboStrdFlt + objVar.OffstCol + 1] = glm::sin(cVar.time);
 
-        }
+        //}
 
-       // objBuff[9] += 0.1f;
-        objBuff[11] += 0.1f;
+        //objBuff[9] += 0.1f;
+        //objBuff[11] += 0.01f*glm::sin(cVar.time);
         //objBuff[8] += 0.1f;
 
 
@@ -238,7 +265,7 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
     glm::vec3 netF =
         + 1.0f * cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)
-        + 1.0f * Fwind
+        + 0.0f * Fwind
         - 1.0f * cVar.a * vel * (glm::length(vel))
         + 1.0f * innF
         - 1.0f * cVar.Dp * vel * (glm::length(vel));
@@ -259,7 +286,9 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
     return netF;
 }
 
-__device__ glm::vec3 RK4func(float stpT, glm::vec3 pos, glm::vec3 acc, glm::vec3 vel) {
+__device__ glm::vec3 samplFunc(float stpT, glm::vec3 pos, glm::vec3 acc, glm::vec3 vel) {
+   
+    
     return pos + vel * stpT + 0.5f * acc * stpT * stpT;
 }
 
@@ -267,9 +296,9 @@ __device__
 glm::vec3 RungeKutt(float stpT, glm::vec3 pT0, glm::vec3 acc, glm::vec3 vel) {
 
     glm::vec3 K1 = pT0;
-    glm::vec3 K2 = RK4func(stpT / 2.0f, pT0 + K1 / 2.0f, acc, vel);
-    glm::vec3 K3 = RK4func(stpT / 2.0f, pT0 + K2 / 2.0f, acc, vel);
-    glm::vec3 K4 = RK4func(stpT, pT0 + K3, acc, vel);
+    glm::vec3 K2 = samplFunc(stpT / 2.0f, pT0 + K1 / 2.0f, acc, vel);
+    glm::vec3 K3 = samplFunc(stpT / 2.0f, pT0 + K2 / 2.0f, acc, vel);
+    glm::vec3 K4 = samplFunc(stpT, pT0 + K3, acc, vel);
 
     return pT0 + 1.0f / 6.0f * stpT * (K1 + 2.0f * K2 + 2.0f * K3 + K4);
 }
@@ -279,6 +308,7 @@ glm::vec3 VerletAlg(glm::vec3 pos, glm::vec3 oldPos, glm::vec3 acc, float stepT)
 
     return 2.0f * pos - oldPos + acc * stepT * stepT;
 }
+
 
 
 __device__
@@ -310,6 +340,51 @@ glm::vec3 ComputeNomral(float* readBuff, unsigned int x, unsigned int y, glm::ve
     return glm::normalize(glm::cross((posR - posL), (posU - posD)));
 }
 
+__device__
+bool furtherCheck(glm::vec3 pn, float r, glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 n) {
+
+    glm::vec3 S1 = glm::normalize(glm::cross(n, (B - A)));
+    glm::vec3 S2 = glm::normalize(glm::cross(n, (C - B)));
+    glm::vec3 S3 = glm::normalize(glm::cross(n, (A - C)));
+    if ((glm::dot((pn - A), S1) > -r) &&
+        (glm::dot((pn - B), S2) > -r) &&
+        (glm::dot((pn - C), S3) > -r)) {
+        return true;
+    }
+    else return false;
+}
+
+__device__
+float getPerpDist(glm::vec3 Pos, float r, glm::vec3 knownP, glm::vec3 n) {
+    return glm::dot((Pos - knownP), glm::normalize(n)) - r ;
+
+}
+
+
+__device__
+bool sphrTrigCollision(glm::vec3 pos, glm::vec3 posNext, float r,
+    glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 n) {
+
+    float d0 = getPerpDist(pos, r, A, n);
+    float dn = getPerpDist(posNext, r, A, n);
+    //printf("dn = %f \n", dn);
+
+    if (d0 * dn > 0) return false;
+    else if (d0 * dn == 0)
+    {
+        if (dn >= 0) return false;
+        else if (dn < 0) {
+            return furtherCheck(posNext, r, A, B, C, n);
+        }
+    }
+    else if (d0 * dn < 0) 
+    {
+        if (dn > 0) return false;
+        if (dn < 0) return furtherCheck(posNext, r, A, B, C, n);
+    }
+
+}
+
 __global__
 void computeParticlePos_Kernel(unsigned int width,
     unsigned int height)
@@ -334,54 +409,164 @@ void computeParticlePos_Kernel(unsigned int width,
     
     //ForceNet
     glm::vec3 ForceNet = computeForceNet(Pos, ppReadBuff, ppWriteBuff, x, y);
-
-    //if (x == 20 && y == 30) {
-
-
-
-    //    printf(" pp read Buff = %d \n", ppReadBuff);
-    //    printf(" pp write buff = %d \n", ppWriteBuff);
-    //    printf(" ppbuff[0] = %d \n", ppbuff[0]);
-    //    printf(" ppbuff[1] = %d \n", ppbuff[1]);
-
-
-    //}
-
-    glm::vec3 Acc = ForceNet / cVar.M;
+    //Acceleration
+    glm::vec3 Acc = ForceNet/cVar.M;
 
     //velocity
-    glm::vec3 lastV = readFromVBO(ppReadBuff, x, y, fxVar.OffstVel);
-    glm::vec3 Vel = lastV + Acc * cVar.stp;
+    glm::vec3 Vel = readFromVBO(ppReadBuff, x, y, fxVar.OffstVel);
+    Vel += Acc * cVar.stp;
     writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
+    if (x == 16 && y == 32) {
+
+        printf(" Vel.x = %f \n", Vel.x);
+        printf(" Vel.y = %f \n", Vel.y);
+        printf(" Vel.z = %f \n", Vel.z);
+        printf(" acc.x = %f \n", Acc.x);
+        printf(" acc.y = %f \n", Acc.y);
+        printf(" acc.z = %f \n", Acc.z);
+        printf("cVar.m = %f \n", cVar.M);
+        printf("cVar.folding = %f \n", cVar.folding);
+    }
+
+
     glm::vec3 nextPos;
+
 
     if ((x == 0 && y == 0) || (x == 0 && y == height - 1) ||
         (x == 0 && y == height / 4) || (x == 0 && y == 3 * height / 4)
         ) {
 
-        glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.5f * fxVar.height / 10.0f) - Pos;
+        //glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.5f * fxVar.height / 10.0f) - Pos;
+        glm::vec3 dir = glm::vec3(1.0f, 0.0f, 0.0f);
 
         nextPos = Pos + 0.001f* dir * cVar.folding;
     }
     else {
 
-        //if (cVar.frz) {
-
-        //    nextPos = Pos;
-        //}
-        //else nextPos = VerletAlg(Pos, lastPos, Acc, cVar.stp);
-
-        nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
         //nextPos = RungeKutt(cVar.stp, Pos, Vel, Acc);
+        nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
+        //nextPos = Pos + Vel;
+        
     }
+
+
+
+    float r = 0.005f;
+
+    for (int i = 0; i < objVar.nInd - 2; i++) {
+
+        glm::vec3 A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 B = readObjVbo(i + 1 + (i + 1) % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 C = readObjVbo(i + 1 + i % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 n = objN[i];
+        if (x == 16 && y == 32) {
+
+            printf("normal %d .x = %f \n", i, n.x);
+            printf("normal %d .y = %f \n", i, n.y);
+            printf("normal %d .z = %f \n", i, n.z);
+
+        }
+
+        if (sphrTrigCollision(Pos, nextPos, r, A, B, C, n)) {
+             
+            //writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+            
+            float dn =  getPerpDist(nextPos, r, A, n);
+            nextPos += 1.001f*(-dn) * n;
+
+            //glm::vec3 s = - glm::dot(Vel, glm::normalize(n)) * glm::normalize(n);
+            //Vel += s;
+            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
+
+            break;
+
+            
+
+        }
+        else {
+           
+          //  writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+        }
+
+
+        //if (sphrTrigCollision(Pos, nextPos, r, A, B, C, n)) {
+
+        //    //float dn = getPerpDist(nextPos, r, A, n);
+        //    //nextPos += (-dn) * n;
+        //    printf("collision true, triangle index = %d, from x %d y %d", i, x, y);
+        //    break;
+        //    
+        //}
+
+    }
+
+    //if (x ==7 && y == 16) {
+
+    //    float d0 = getPerpDist(Pos, r, A, n);
+    //    float dn = getPerpDist(nextPos, r, A, n);
+    //    printf("d0 = %f, dn = %f, do * dn = %f \n", d0, dn, d0 * dn);
+
+    //}
+
+    //if (x == 16 && y == 32) {
+
+
+    //    for (int i = 0; i < objVar.nInd - 2; i++) {
+
+    //        A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //        B = readObjVbo(i + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //        C = readObjVbo(i + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //        n = objN[i];
+
+    //        float d0 = getPerpDist(Pos, r, A, n);
+    //        float dn = getPerpDist(nextPos, r, A, n);
+    //        if (d0 * dn <= 0) {
+    //           // printf(" d0 * dn < 0 from x = %d, y = %d \n", x, y);
+    //    
+    //            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+    //        }
+    //        else {
+    //        
+    //            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+    //        }
+
+    //         //printf("index count : %d", objVar.nInd);
+
+    //        printf("index i = %d\n A.x = %f; A.y = %f; A.z = %f;\n", i, A.x, A.y, A.z);
+    //        printf("B.x = %f; B.y = %f; B.z = %f;\n", B.x, B.y, B.z);
+    //        printf("C.x = %f; C.y = %f; C.z = %f;\n", C.x, C.y, C.z);
+    //        printf("n.x = %f; n.y = %f; n.z = %f;\n", n.x, n.y, n.z);
+
+    //    }
+
+    //}
+
+
+
+    //if (x == 3 && y ==3) {
+    //    for (int i = 0; i < objVar.nInd - 2; i++) {
+    //        printf(" objN[%d].x = %f \n", i, objN[i].x);
+    //        printf(" objN[%d].y = %f \n", i, objN[i].y);
+    //        printf(" objN[%d].z = %f \n", i, objN[i].z);
+
+
+    //        printf("objBuff[%d] = %f \n", i, objBuff[i]);
+
+
+    //    }
+
+    //}
+
+
+
 
     writeToVBO(nextPos, ppWriteBuff, x, y, fxVar.OffstPos);
 
 }
 
 
-void Cloth_Launch_Kernel( const unsigned int mesh_width, const unsigned int mesh_height)
+void Cloth_Launch_Kernel(const unsigned int mesh_width, const unsigned int mesh_height)
 {
     dim3 block(32, 32, 1);
     dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
@@ -389,13 +574,116 @@ void Cloth_Launch_Kernel( const unsigned int mesh_width, const unsigned int mesh
     //std::cout << " readBuff = " << readBuff << std::endl;
     //std::cout << "ppReadBuff = " << ppReadBuff << std::endl;
 
-    computeParticlePos_Kernel << < grid, block >> > (mesh_width,
-        mesh_height);
+    computeParticlePos_Kernel << < grid, block >> > (mesh_width, mesh_height);
     CheckCudaErr("simple_vbo_kernel launch fail ");
-    
+
     cudaDeviceSynchronize();
     CheckCudaErr("cudaDeviceSynghconize fail ");
 
 }
 
+
+
+__global__
+void preCompObjNm_Kernel() {
+    
+    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    if (x > objVar.nInd - 2) return;
+
+    glm::vec3 p1, p2, p3;
+    
+    if (x % 2 == 0) {
+        p1 = readObjVbo(x, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        p2 = readObjVbo(x + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        p3 = readObjVbo(x + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    }
+    else {
+        p1 = readObjVbo(x, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        p2 = readObjVbo(x + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        p3 = readObjVbo(x + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    }
+
+    objN[x] = glm::normalize(glm::cross((p3 - p1),(p2 - p1)));
+
+    if (x == 3) {
+        for (int i = 0; i < objVar.nInd - 2; i++) {
+            printf(" objN[%d].x = %f \n", i, objN[i].x);
+            printf(" objN[%d].y = %f \n" , i, objN[i].y);
+            printf(" objN[%d].z = %f \n", i, objN[i].z);
+
+        }
+
+    }
+
+}
+
+void ComptObjNormal_Kernel() {
+
+
+    dim3 blckD(32, 1, 1);
+    dim3 grdD(ceil(objVar.nInd - 2)/blckD.x, 1, 1);
+
+    preCompObjNm_Kernel << <grdD, blckD >> > ();
+    CheckCudaErr("preCompute Obj Normal launch fail ");
+
+    cudaDeviceSynchronize();
+    CheckCudaErr("cudaDeviceSynghconize fail ");
+
+}
+
+//void debugPrint() {
+//
+//
+//
+//    if (x == 0) {
+//
+//
+//        printf(" objVar.stride = %d \n", objVar.vboStrdFlt);
+//        printf(" objVar.offset pos= %d \n", objVar.OffstPos);
+//        printf(" objVar.offset normal = %d \n", objVar.OffstNm);
+//        printf(" objVar.offset color = %d \n", objVar.OffstCol);
+//        printf(" objVar.nVerts = %d \n", objVar.nVerts);
+//        printf(" objVar.nInd = %d \n", objVar.nInd);
+//
+//
+//        printf(" p1.x = %f \n", p1.x);
+//        printf(" p1.y = %f \n", p1.y);
+//        printf(" p1.x = %f \n", p1.z);
+//        printf(" p2.x = %f \n", p2.x);
+//        printf(" p2.x = %f \n", p2.y);
+//        printf(" p2.x = %f \n", p2.z);
+//        printf(" p3.x = %f \n", p3.x);
+//        printf(" p3.x = %f \n", p3.y);
+//        printf(" p3.x = %f \n", p3.z);
+//
+//
+//        for (int i = 0; i < objVar.nInd; i++) {
+//
+//            printf("objind[%d] = %d \n", i, objIndBuff[i]);
+//
+//        }
+//        for (int i = 0; i < objVar.nInd - 2; i++) {
+//
+//            printf("pos[%d].x = %f \n", i, readObjVbo(i, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos).x);
+//            printf("pos[%d].y = %f \n", i, readObjVbo(i, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos).y);
+//            printf("pos[%d].z = %f \n", i, readObjVbo(i, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos).z);
+//
+//
+//        }
+//
+//        for (int i = 0; i < objVar.nInd - 2; i++) {
+//
+//            printf(" obj normal %d.x = %f \n", i, objN[i].x);
+//            printf(" obj normal %d.y = %f \n", i, objN[i].y);
+//            printf(" obj normal %d.z = %f \n", i, objN[i].z);
+//
+//        }
+//
+//
+//    }
+//
+//
+//
+//
+//}
 

@@ -55,6 +55,7 @@ void CustomObj::CreateVboVector(std::vector<float> vertices,
 	objConst.OffstNm = 5;
 	objConst.OffstCol = 8;
 	objConst.nVerts = numOfFloat / 11;
+	objConst.nInd = numOfIndices;
 	cpyObjConst(&objConst);
 
 	Clearobj();
@@ -86,7 +87,8 @@ void CustomObj::CreateVboVector(std::vector<float> vertices,
 	glBindVertexArray(0);
 
 	//only for read in cuda
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cstmObjRes, VBO, cudaGraphicsMapFlagsNone));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cstmObjRes, VBO, cudaGraphicsMapFlagsReadOnly));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&ObjIboRes, IBO, cudaGraphicsMapFlagsReadOnly));
 
 }
 
@@ -97,6 +99,7 @@ void CustomObj::CreateVbo(float* vertices, unsigned int* indices, unsigned int n
 	objConst.OffstNm = 5;
 	objConst.OffstCol = 8;
 	objConst.nVerts = numOfFloat/11;
+	objConst.nInd = numOfIndices;
 	cpyObjConst(&objConst);
 
 	Clearobj();
@@ -129,30 +132,41 @@ void CustomObj::CreateVbo(float* vertices, unsigned int* indices, unsigned int n
 
 	//only for read in cuda
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cstmObjRes, VBO, cudaGraphicsRegisterFlagsReadOnly));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&ObjIboRes, IBO, cudaGraphicsMapFlagsNone));
+
 }
 
 void CustomObj::DrawObjStrip() {
-
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
-
 }
 
 //call before kernel
-void CustomObj::passVboPtrKernel() {
+void CustomObj::passObjPtrToKernel() {
 
 	float* d_ObjPtr;
 	size_t num_bytes;
 	checkCudaErrors(cudaGraphicsMapResources(1, &cstmObjRes, 0));
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_ObjPtr, &num_bytes, cstmObjRes));
+	
+	unsigned int* d_iboPtr;
+	size_t num_bytes2;
+	checkCudaErrors(cudaGraphicsMapResources(1, &ObjIboRes, 0));
+	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_iboPtr, &num_bytes2, ObjIboRes));
 
-	passCstmObjPtr(d_ObjPtr);
+	glm::vec3* d_objNormal;
+	checkCudaErrors(cudaMalloc((void**)&d_objNormal, ((long long)indexCount - 2) * sizeof(glm::vec3)));
+	
+	passCstmObjPtr(d_ObjPtr, d_iboPtr, d_objNormal);
 }
 
 //call after kernel
 void CustomObj::unmapResource() {
 	checkCudaErrors(cudaGraphicsUnmapResources(1, &cstmObjRes, 0));
+	checkCudaErrors(cudaGraphicsUnmapResources(1, &ObjIboRes, 0));
 }

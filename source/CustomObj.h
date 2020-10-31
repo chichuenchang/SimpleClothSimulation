@@ -14,7 +14,7 @@ public:
 		unsigned int numOfIndices);
 
 	void DrawObjStrip();
-	void passVboPtrKernel();
+	void passObjPtrToKernel();
 	void unmapResource();
 
 	~CustomObj();
@@ -24,6 +24,7 @@ private:
 	GLsizei indexCount;
 
 	cudaGraphicsResource* cstmObjRes;
+	cudaGraphicsResource* ObjIboRes;
 
 	objConst objConst;
 

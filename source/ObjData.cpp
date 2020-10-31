@@ -15,11 +15,10 @@ void ObjData::objData(glm::vec3 p, float s) {
 	nFlt_s = 0;
 	nInd_s = 0;
 
-
-	fillCubeVert(p, s);
-	fillQuadVert(p + glm::vec3(-0.8f, -0.1f, -0.8f), 3.0f);
+	//0.3f, -0.5f, 0.5f
+	fillCubeVert(glm::vec3(0.3f, -0.5f, 0.5f), s);
+	fillQuadVert(p + glm::vec3(-0.8f, -0.4f, -0.8f), 3.0f);
 	fillSphereVert(p + glm::vec3(0.0f, 0.0f, 0.0f), 0.1f);
-
 
 }
 
@@ -109,6 +108,8 @@ void ObjData::fillSphereVert(glm::vec3 p, float s) {
 		oddRow = !oddRow;
 	}
 	nInd_s = indPtr_s.size();
+	//std::cout << "cpu sphere number of indices = " << indPtr_s.size() << std::endl;
+
 
 	//std::vector<float> vPtr_s;
 	for (int i = 0; i < positions.size(); ++i)

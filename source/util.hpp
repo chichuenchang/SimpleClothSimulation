@@ -63,6 +63,7 @@ struct objConst {
 	unsigned int OffstNm;
 	unsigned int OffstCol;
 	unsigned int nVerts;
+	unsigned int nInd;
 };
 
 
