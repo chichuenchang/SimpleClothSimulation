@@ -265,23 +265,10 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
     //F = m*g + Fwind - air * vel* vel + innF - damp = m*Acc;
     glm::vec3 netF =
         + 1.0f * cVar.M * glm::vec3(0.0f, cVar.g, 0.0f)
-        + 0.0f * Fwind
+        + 1.0f * Fwind
         - 1.0f * cVar.a * vel * (glm::length(vel))
         + 1.0f * innF
         - 1.0f * cVar.Dp * vel * (glm::length(vel));
-//
-//    if (x == 20 && y == 30) {
-//
-//    printf(" netF.x = %f \n", netF.x);
-//    printf(" netF.y = %f \n", netF.y);
-//    printf(" netF.z = %f \n", netF.z);
-//
-//    printf(" m = %f \n", cVar.M);
-//    printf(" gravity= %f \n", cVar.g);
-//
-//
-//}
-    
 
     return netF;
 }
@@ -385,6 +372,45 @@ bool sphrTrigCollision(glm::vec3 pos, glm::vec3 posNext, float r,
 
 }
 
+__device__
+void clothObjCollision(glm::vec3 Pos, glm::vec3& NextPos, unsigned int x, unsigned int y) {
+
+    float r = 0.005f;
+
+    for (int i = 0; i < objVar.nInd - 2; i++) {
+
+        glm::vec3 A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 B = readObjVbo(i + 1 + (i + 1) % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 C = readObjVbo(i + 1 + i % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        glm::vec3 n = objN[i];
+
+
+        if (sphrTrigCollision(Pos, NextPos, r, A, B, C, n)) {
+
+            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+
+            float dn = getPerpDist(NextPos, r, A, n);
+            NextPos += 1.001f * (-dn) * n;
+
+            //glm::vec3 s = - glm::dot(Vel, glm::normalize(n)) * glm::normalize(n);
+            //Vel += s;
+            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
+
+            break;
+
+
+
+        }
+        else {
+
+              writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+        }
+
+    }
+}
+
+
+
 __global__
 void computeParticlePos_Kernel(unsigned int width,
     unsigned int height)
@@ -393,12 +419,6 @@ void computeParticlePos_Kernel(unsigned int width,
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
     if (x > width || y > height) return;
 
-   /*
-    if (x == 0 && y == 0) {
-
-        printf("vCar.frz = %d \n", cVar.frz);
-
-    }*/
 
     //current pos and last frame pos
     glm::vec3 Pos = readFromVBO(ppReadBuff, x, y, fxVar.OffstPos);
@@ -417,21 +437,7 @@ void computeParticlePos_Kernel(unsigned int width,
     Vel += Acc * cVar.stp;
     writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
-    if (x == 16 && y == 32) {
-
-        printf(" Vel.x = %f \n", Vel.x);
-        printf(" Vel.y = %f \n", Vel.y);
-        printf(" Vel.z = %f \n", Vel.z);
-        printf(" acc.x = %f \n", Acc.x);
-        printf(" acc.y = %f \n", Acc.y);
-        printf(" acc.z = %f \n", Acc.z);
-        printf("cVar.m = %f \n", cVar.M);
-        printf("cVar.folding = %f \n", cVar.folding);
-    }
-
-
     glm::vec3 nextPos;
-
 
     if ((x == 0 && y == 0) || (x == 0 && y == height - 1) ||
         (x == 0 && y == height / 4) || (x == 0 && y == 3 * height / 4)
@@ -450,113 +456,7 @@ void computeParticlePos_Kernel(unsigned int width,
         
     }
 
-
-
-    float r = 0.005f;
-
-    for (int i = 0; i < objVar.nInd - 2; i++) {
-
-        glm::vec3 A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-        glm::vec3 B = readObjVbo(i + 1 + (i + 1) % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-        glm::vec3 C = readObjVbo(i + 1 + i % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-        glm::vec3 n = objN[i];
-        if (x == 16 && y == 32) {
-
-            printf("normal %d .x = %f \n", i, n.x);
-            printf("normal %d .y = %f \n", i, n.y);
-            printf("normal %d .z = %f \n", i, n.z);
-
-        }
-
-        if (sphrTrigCollision(Pos, nextPos, r, A, B, C, n)) {
-             
-            //writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
-            
-            float dn =  getPerpDist(nextPos, r, A, n);
-            nextPos += 1.001f*(-dn) * n;
-
-            //glm::vec3 s = - glm::dot(Vel, glm::normalize(n)) * glm::normalize(n);
-            //Vel += s;
-            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
-
-            break;
-
-            
-
-        }
-        else {
-           
-          //  writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
-        }
-
-
-        //if (sphrTrigCollision(Pos, nextPos, r, A, B, C, n)) {
-
-        //    //float dn = getPerpDist(nextPos, r, A, n);
-        //    //nextPos += (-dn) * n;
-        //    printf("collision true, triangle index = %d, from x %d y %d", i, x, y);
-        //    break;
-        //    
-        //}
-
-    }
-
-    //if (x ==7 && y == 16) {
-
-    //    float d0 = getPerpDist(Pos, r, A, n);
-    //    float dn = getPerpDist(nextPos, r, A, n);
-    //    printf("d0 = %f, dn = %f, do * dn = %f \n", d0, dn, d0 * dn);
-
-    //}
-
-    //if (x == 16 && y == 32) {
-
-
-    //    for (int i = 0; i < objVar.nInd - 2; i++) {
-
-    //        A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-    //        B = readObjVbo(i + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-    //        C = readObjVbo(i + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
-    //        n = objN[i];
-
-    //        float d0 = getPerpDist(Pos, r, A, n);
-    //        float dn = getPerpDist(nextPos, r, A, n);
-    //        if (d0 * dn <= 0) {
-    //           // printf(" d0 * dn < 0 from x = %d, y = %d \n", x, y);
-    //    
-    //            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
-    //        }
-    //        else {
-    //        
-    //            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
-    //        }
-
-    //         //printf("index count : %d", objVar.nInd);
-
-    //        printf("index i = %d\n A.x = %f; A.y = %f; A.z = %f;\n", i, A.x, A.y, A.z);
-    //        printf("B.x = %f; B.y = %f; B.z = %f;\n", B.x, B.y, B.z);
-    //        printf("C.x = %f; C.y = %f; C.z = %f;\n", C.x, C.y, C.z);
-    //        printf("n.x = %f; n.y = %f; n.z = %f;\n", n.x, n.y, n.z);
-
-    //    }
-
-    //}
-
-
-
-    //if (x == 3 && y ==3) {
-    //    for (int i = 0; i < objVar.nInd - 2; i++) {
-    //        printf(" objN[%d].x = %f \n", i, objN[i].x);
-    //        printf(" objN[%d].y = %f \n", i, objN[i].y);
-    //        printf(" objN[%d].z = %f \n", i, objN[i].z);
-
-
-    //        printf("objBuff[%d] = %f \n", i, objBuff[i]);
-
-
-    //    }
-
-    //}
+    //clothObjCollision(Pos, nextPos, x, y); 
 
 
 

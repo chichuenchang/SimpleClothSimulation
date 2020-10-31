@@ -12,6 +12,9 @@ public:
 	void CreateVboVector(std::vector<float> vertices, 
 		std::vector<unsigned int> indices, unsigned int numOfFloat, 
 		unsigned int numOfIndices);
+	void CreateImptObjVbo(float* vertices, unsigned int* indices, 
+		unsigned int numOfFloat, unsigned int numOfIndices);
+
 
 	void DrawObjStrip();
 	void passObjPtrToKernel();

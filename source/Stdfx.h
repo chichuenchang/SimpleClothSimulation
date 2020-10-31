@@ -27,4 +27,6 @@
 #include <cuda_gl_interop.h>
 #include <helper_cuda.h>
 
+#include "ObjLoad.h"
+
 #endif

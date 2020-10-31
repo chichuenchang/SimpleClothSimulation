@@ -92,7 +92,7 @@ void testClothRender::fillBufferData() {
 			testGrid.push_back({glm::vec3((float)i * 0.02f, 0.0f, (float)j * 0.02f), //pos
 								glm::vec2((float)i / (float)(cloth_width - 1), (float)j / (float)(cloth_height - 1)),//texCoord
 								glm::vec3(0.0f, 1.0f, 1.0f),//
-								glm::vec3(0.961f, 0.961f, 0.863f),//p color megenta
+								glm::vec3(0.961f, 0.961f, 0.863f),//
 								glm::vec3(0.0f)});	//for kernel to write velocity
 
 		}
@@ -173,7 +173,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.g = -10.0f;
 	clothConst.k = 100.0f;
 	clothConst.rLen = 0.02f;
-	clothConst.MxL = 0.04f;
+	clothConst.MxL = 0.03f;
 
 	clothConst.stp = 0.004f;
 	clothConst.dt = 0.000005f;

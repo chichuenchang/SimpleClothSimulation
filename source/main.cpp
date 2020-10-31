@@ -19,6 +19,7 @@
 #include "CudaInte.cuh"
 #include "CustomObj.h"
 #include "ObjData.h"
+#include "ObjLoad.h"
 
 extern "C" {//force opengl run with nvidia card
 	_declspec(dllexport) DWORD NvOptimusEnablement = 1;
@@ -110,6 +111,10 @@ void debugPrint() {
 
 void initScene() {
 
+	//test=========================================
+	obj::Model a;
+	a = obj::loadModelFromFile("assets/model/cube.obj");
+
 	cloth.initClothConstValue(cVar, fxVar, clothWidth, clothHeight);
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 	
@@ -119,25 +124,22 @@ void initScene() {
 	//gen obj buffer
 	
 	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
-	objLst.push_back(cube);
+	//cube->CreateVbo();
 	
-	/*CustomObj* quad = new CustomObj;
-	quad->CreateVbo(d->vPtr_q, d->indPtr_q, d->nFlt_q, d->nInd_q);
-	objLst.push_back(quad);
-	CustomObj* sphere = new CustomObj;
-	sphere->CreateVboVector(d->vPtr_s, d->indPtr_s, d->nFlt_s, d->nInd_s);
-	objLst.push_back(sphere);*/
+	
+	objLst.push_back(cube);
 
 
 	//pass the sphere vbo to kernel
-	cube->passObjPtrToKernel();
+	//cube->passObjPtrToKernel();
 
 	//call kernel precompute normal
-	ComptObjNormal_Kernel();
+	//ComptObjNormal_Kernel();
 
 	//call unmap resource after kernel
-	cube->unmapResource();
+	//cube->unmapResource();
 
+	
 
 }
 

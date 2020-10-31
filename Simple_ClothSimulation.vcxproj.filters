@@ -62,6 +62,12 @@
     <ClInclude Include="source\ObjData.h">
       <Filter>header</Filter>
     </ClInclude>
+    <ClInclude Include="source\stb_image.h">
+      <Filter>header</Filter>
+    </ClInclude>
+    <ClInclude Include="source\ObjLoad.h">
+      <Filter>header</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="source\main.cpp">
