@@ -12,11 +12,12 @@ public:
 	void CreateVboVector(std::vector<float> vertices, 
 		std::vector<unsigned int> indices, unsigned int numOfFloat, 
 		unsigned int numOfIndices);
-	void CreateImptObjVbo(float* vertices, unsigned int* indices, 
-		unsigned int numOfFloat, unsigned int numOfIndices);
+	void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
+		std::vector<float>* uv, std::vector<float>* normal,
+		std::vector<unsigned int>* indices, unsigned int numOfFloat,
+		unsigned int numOfIndices);
 
-
-	void DrawObjStrip();
+	void DrawObjStrip(GLenum PrimitiveType, GLenum PolygonMode);
 	void passObjPtrToKernel();
 	void unmapResource();
 

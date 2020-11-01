@@ -15,7 +15,7 @@ __constant__
 unsigned int* objIndBuff;
 __constant__
 objConst objVar;
-__constant__
+__device__
 glm::vec3* objN;
 
 
@@ -456,7 +456,7 @@ void computeParticlePos_Kernel(unsigned int width,
         
     }
 
-    //clothObjCollision(Pos, nextPos, x, y); 
+    clothObjCollision(Pos, nextPos, x, y); 
 
 
 
@@ -479,6 +479,11 @@ void Cloth_Launch_Kernel(const unsigned int mesh_width, const unsigned int mesh_
 
     cudaDeviceSynchronize();
     CheckCudaErr("cudaDeviceSynghconize fail ");
+
+
+    //std::cout << "objConst. vboStdinFlt = " << objVar.vboStrdFlt << std::endl;
+
+
 
 }
 
@@ -512,6 +517,11 @@ void preCompObjNm_Kernel() {
             printf(" objN[%d].z = %f \n", i, objN[i].z);
 
         }
+
+        printf("objVar.vboStrdinflt = %d", objVar.vboStrdFlt);
+
+
+
 
     }
 

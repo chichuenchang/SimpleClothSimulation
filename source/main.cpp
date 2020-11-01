@@ -110,34 +110,38 @@ void debugPrint() {
 
 
 void initScene() {
-
-	//test=========================================
-	obj::Model a;
-	a = obj::loadModelFromFile("assets/model/cube.obj");
-
+	//cloth
 	cloth.initClothConstValue(cVar, fxVar, clothWidth, clothHeight);
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
+
+
+	//obj::Model mData;
+	//mData = obj::loadModelFromFile("assets/model/bunny.obj");
+
+	//CustomObj* imptMdl = new CustomObj;
+	//unsigned int nElements = mData.vertex.size() + mData.texCoord.size() + mData.normal.size();
+	//imptMdl->CreateImptObjVbo(&mData.vertex, &mData.texCoord, &mData.normal,
+	//	&mData.faces["default"], nElements, mData.faces["default"].size());
+	//
+	//objLst.push_back(imptMdl);
+	//
 	
+	//my own cube method
 	//prepare data
 	ObjData* d = new ObjData;
 	d->objData(glm::vec3(0.0f), 0.3f);
-	//gen obj buffer
-	
 	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
 	//cube->CreateVbo();
-	
-	
 	objLst.push_back(cube);
 
-
 	//pass the sphere vbo to kernel
-	//cube->passObjPtrToKernel();
+	cube->passObjPtrToKernel();
 
 	//call kernel precompute normal
-	//ComptObjNormal_Kernel();
+	ComptObjNormal_Kernel();
 
 	//call unmap resource after kernel
-	//cube->unmapResource();
+	cube->unmapResource();
 
 	
 
@@ -198,10 +202,12 @@ void drawScene() {
 
 
 	//customized obj 
-	std::vector<CustomObj*>::iterator i;
-	for (i = objLst.begin(); i != objLst.end(); i++) {
-		(*i)->DrawObjStrip();
-		assert(glGetError() == GL_NO_ERROR);
+	if (!objLst.empty()) {
+		std::vector<CustomObj*>::iterator i;
+		for (i = objLst.begin(); i != objLst.end(); i++) {
+			(*i)->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
+			assert(glGetError() == GL_NO_ERROR);
+		}
 	}
 }
 

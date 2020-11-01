@@ -136,7 +136,29 @@ void CustomObj::CreateVbo(float* vertices, unsigned int* indices, unsigned int n
 
 }
 
-void CustomObj::CreateImptObjVbo(float* vertices, unsigned int* indices, unsigned int numOfFloat, unsigned int numOfIndices) {
+void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
+	std::vector<float>* uv, std::vector<float>* normal,
+	std::vector<unsigned int>* indices, unsigned int numOfFloat,
+	unsigned int numOfIndices)
+{
+	//rearrange data to interleave========================
+	unsigned int nEntries = vertPos->size() / 3;
+	std::vector<float> impVbo;
+	for (int i = 0; i < nEntries - 1; i++) {
+		impVbo.push_back(vertPos->at(3 * size_t(i) + 0));
+		impVbo.push_back(vertPos->at(3 * size_t(i) + 1));
+		impVbo.push_back(vertPos->at(3 * size_t(i) + 2));
+		//		impVbo.push_back(uv->at(2 * size_t(i) + 0));
+		//		impVbo.push_back(uv->at(2 * size_t(i) + 1));
+		impVbo.push_back(0.0f);
+		impVbo.push_back(0.0f);
+		impVbo.push_back(normal->at(3 * size_t(i) + 0));
+		impVbo.push_back(normal->at(3 * size_t(i) + 1));
+		impVbo.push_back(normal->at(3 * size_t(i) + 2));
+	}
+	//================================================
+
+	std::cout << "n float element = " << impVbo.size() << std::endl;
 
 	objConst.vboStrdFlt = 8;
 	objConst.OffstPos = 0;
@@ -144,6 +166,7 @@ void CustomObj::CreateImptObjVbo(float* vertices, unsigned int* indices, unsigne
 	objConst.OffstCol = 0;
 	objConst.nVerts = numOfFloat / 8;
 	objConst.nInd = numOfIndices;
+
 	cpyObjConst(&objConst);
 
 	Clearobj();
@@ -155,20 +178,20 @@ void CustomObj::CreateImptObjVbo(float* vertices, unsigned int* indices, unsigne
 
 	glGenBuffers(1, &IBO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * numOfIndices, indices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ELEMENT_ARRAY_BUFFER, sizeof(unsigned int) * indices->size(), indices->data(), GL_DYNAMIC_DRAW);
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * numOfFloat, vertices, GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * impVbo.size(), impVbo.data(), GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, 0);
-	glEnableVertexAttribArray(0);
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 3));
-	glEnableVertexAttribArray(1);										  
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 5));
-	glEnableVertexAttribArray(2);										  
-	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(vertices[0]) * 8, (void*)(sizeof(vertices[0]) * 8));
-	glEnableVertexAttribArray(3);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
+	glEnableVertexAttribArray(0);						   
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+	glEnableVertexAttribArray(1);							  						  
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
+	glEnableVertexAttribArray(2);							  						  
+	//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 8));
+	//glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
@@ -182,11 +205,11 @@ void CustomObj::CreateImptObjVbo(float* vertices, unsigned int* indices, unsigne
 
 
 
-void CustomObj::DrawObjStrip() {
+void CustomObj::DrawObjStrip(GLenum PrimitiveType, GLenum PolygonMode) {
 	glBindVertexArray(VAO);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, IBO);
-	glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
-	glDrawElements(GL_TRIANGLE_STRIP, indexCount, GL_UNSIGNED_INT, 0);
+	glPolygonMode(GL_FRONT_AND_BACK, PolygonMode);
+	glDrawElements(PrimitiveType, indexCount, GL_UNSIGNED_INT, 0);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
