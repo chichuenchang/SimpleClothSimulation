@@ -16,7 +16,7 @@ void ObjData::objData(glm::vec3 p, float s) {
 	nInd_s = 0;
 
 	//0.3f, -0.5f, 0.5f
-	fillCubeVert(glm::vec3(0.3f, -0.5f, 0.5f), s);
+	fillCubeVert(glm::vec3(0.4f, -0.5f, 0.5f), s);
 	fillQuadVert(p + glm::vec3(-0.8f, -0.4f, -0.8f), 3.0f);
 	fillSphereVert(p + glm::vec3(0.0f, 0.0f, 0.0f), 0.1f);
 
@@ -43,7 +43,6 @@ void ObjData::fillCubeVert(glm::vec3 p, float s) {
 
 	nFlt_cb = 88;
 	nInd_cb = 14;
-
 }
 
 
@@ -58,7 +57,6 @@ void ObjData::fillQuadVert(glm::vec3 p, float s) {
 	indPtr_q = new unsigned int[] {1, 0, 2, 3 };
 
 	nFlt_q = 44;
-	nInd_q = 4;
 }
 
 void ObjData::fillSphereVert(glm::vec3 p, float s) {

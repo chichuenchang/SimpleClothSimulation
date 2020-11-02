@@ -115,17 +115,25 @@ void initScene() {
 	cloth.initCloth(clothWidth, clothHeight, attribLoc, cVar, fxVar);
 
 
-	//obj::Model mData;
-	//mData = obj::loadModelFromFile("assets/model/bunny.obj");
+	/*obj::Model mData;
+	mData = obj::loadModelFromFile("assets/model/bunny.obj");
 
-	//CustomObj* imptMdl = new CustomObj;
-	//unsigned int nElements = mData.vertex.size() + mData.texCoord.size() + mData.normal.size();
-	//imptMdl->CreateImptObjVbo(&mData.vertex, &mData.texCoord, &mData.normal,
-	//	&mData.faces["default"], nElements, mData.faces["default"].size());
-	//
-	//objLst.push_back(imptMdl);
-	//
+	CustomObj* imptMdl = new CustomObj;
+	glm::vec3 objMove = glm::vec3(0.2f, -0.2f, 0.6f);
+	unsigned int nElements = mData.vertex.size() + mData.texCoord.size() + mData.normal.size();
+	imptMdl->CreateImptObjVbo(&mData.vertex, &mData.texCoord, &mData.normal,
+		&mData.faces["default"], nElements, mData.faces["default"].size(), objMove);
 	
+	objLst.push_back(imptMdl);*/
+
+	//imptMdl->passObjPtrToKernel();
+	//ComptObjNormal_Kernel(mData.faces["default"].size()/3);
+	//imptMdl->unmapResource();
+	//
+
+
+
+
 	//my own cube method
 	//prepare data
 	ObjData* d = new ObjData;
@@ -138,7 +146,8 @@ void initScene() {
 	cube->passObjPtrToKernel();
 
 	//call kernel precompute normal
-	ComptObjNormal_Kernel();
+	
+	ComptObjNormal_Kernel(d->nInd_cb-2);
 
 	//call unmap resource after kernel
 	cube->unmapResource();
@@ -202,13 +211,16 @@ void drawScene() {
 
 
 	//customized obj 
-	if (!objLst.empty()) {
-		std::vector<CustomObj*>::iterator i;
-		for (i = objLst.begin(); i != objLst.end(); i++) {
-			(*i)->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
-			assert(glGetError() == GL_NO_ERROR);
-		}
-	}
+	//if (!objLst.empty()) {
+	//	std::vector<CustomObj*>::iterator i;
+	//	for (i = objLst.begin(); i != objLst.end(); i++) {
+	//		(*i)->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
+	//		assert(glGetError() == GL_NO_ERROR);
+	//	}
+	//}
+
+	//objLst[0]->DrawObjStrip(GL_TRIANGLES, GL_LINE);
+	objLst[1]->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
 }
 
 int main() {

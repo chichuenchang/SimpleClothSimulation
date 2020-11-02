@@ -96,6 +96,16 @@ glm::vec3 readObjVbo(int threadInd, float* objVbo, unsigned int* objIbo, unsigne
         objVbo[objIbo[threadInd] * strdFlt + offst + 2]);
 }
 
+__device__
+void writeObjVbo(glm::vec3 in_vec3, int threadInd, float* objVbo, unsigned int* objIbo, unsigned int strdFlt,
+    unsigned int offst) {
+
+    objVbo[objIbo[threadInd] * strdFlt + offst + 0] = in_vec3.x;
+    objVbo[objIbo[threadInd] * strdFlt + offst + 1] = in_vec3.y;
+    objVbo[objIbo[threadInd] * strdFlt + offst + 2] = in_vec3.z;
+
+}
+
 
 __device__
 float length(glm::vec3 a, glm::vec3 b) {
@@ -333,6 +343,9 @@ bool furtherCheck(glm::vec3 pn, float r, glm::vec3 A, glm::vec3 B, glm::vec3 C, 
     glm::vec3 S1 = glm::normalize(glm::cross(n, (B - A)));
     glm::vec3 S2 = glm::normalize(glm::cross(n, (C - B)));
     glm::vec3 S3 = glm::normalize(glm::cross(n, (A - C)));
+    //glm::vec3 S1 = glm::normalize(glm::cross(n, (A - B)));
+    //glm::vec3 S2 = glm::normalize(glm::cross(n, (B - C)));
+    //glm::vec3 S3 = glm::normalize(glm::cross(n, (C - A)));
     if ((glm::dot((pn - A), S1) > -r) &&
         (glm::dot((pn - B), S2) > -r) &&
         (glm::dot((pn - C), S3) > -r)) {
@@ -377,20 +390,28 @@ void clothObjCollision(glm::vec3 Pos, glm::vec3& NextPos, unsigned int x, unsign
 
     float r = 0.005f;
 
-    for (int i = 0; i < objVar.nInd - 2; i++) {
+    for (int i = 0; i < objVar.nTrig - 1; i++) {
+        
+        //triangles
+        //glm::vec3 A = readObjVbo(3* i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        //glm::vec3 B = readObjVbo(3* i + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+        //glm::vec3 C = readObjVbo(3* i + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
 
+        //triangle strip
         glm::vec3 A = readObjVbo(i + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
         glm::vec3 B = readObjVbo(i + 1 + (i + 1) % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
         glm::vec3 C = readObjVbo(i + 1 + i % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
         glm::vec3 n = objN[i];
 
-
+            //float dn = getPerpDist(NextPos, r, A, n);
+            //float d0 = getPerpDist(Pos, r, A, n);
         if (sphrTrigCollision(Pos, NextPos, r, A, B, C, n)) {
+        //if (dn*d0<0) {
 
-            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+            //writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
 
             float dn = getPerpDist(NextPos, r, A, n);
-            NextPos += 1.001f * (-dn) * n;
+            NextPos += 1.01f * (-dn) * n;
 
             //glm::vec3 s = - glm::dot(Vel, glm::normalize(n)) * glm::normalize(n);
             //Vel += s;
@@ -458,9 +479,6 @@ void computeParticlePos_Kernel(unsigned int width,
 
     clothObjCollision(Pos, nextPos, x, y); 
 
-
-
-
     writeToVBO(nextPos, ppWriteBuff, x, y, fxVar.OffstPos);
 
 }
@@ -492,8 +510,39 @@ void Cloth_Launch_Kernel(const unsigned int mesh_width, const unsigned int mesh_
 __global__
 void preCompObjNm_Kernel() {
     
+    //TRIANGLES
+    //unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    //if (x > objVar.nTrig - 1) return;
+    //glm::vec3 p1, p2, p3;
+
+    //p1 = readObjVbo(x * 3 + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //p2 = readObjVbo(x * 3 + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //p3 = readObjVbo(x * 3 + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
+    //objN[x] = glm::normalize(glm::cross((p3 - p1), (p2 - p1)));
+
+    //writeObjVbo(objN[x], x * 3 + 0, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstCol);
+    //writeObjVbo(objN[x], x * 3 + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstCol);
+    //writeObjVbo(objN[x], x * 3 + 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstCol);
+
+    //printf("this is thread%d \n", x);
+  
+    //if (x == 3) {
+    //  printf("objVar.vboStrdinflt = %d \n", objVar.vboStrdFlt);
+    //  printf("objVar.nTrig = %d \n", objVar.nTrig);
+
+
+    //  for (int i = 0; i < objVar.nTrig ; i++) {
+    //      printf(" objN[%d].x = %f \n", i, objN[i].x);
+    //      printf(" objN[%d].y = %f \n" , i, objN[i].y);
+    //      printf(" objN[%d].z = %f \n", i, objN[i].z);
+    //  }
+
+    //}
+
+
+    //TRIANGLE STRIP METHOD==========================================
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
-    if (x > objVar.nInd - 2) return;
+    if (x > objVar.nTrig -1 ) return;
 
     glm::vec3 p1, p2, p3;
     
@@ -508,36 +557,36 @@ void preCompObjNm_Kernel() {
         p3 = readObjVbo(x + 1, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
     }
 
-    objN[x] = glm::normalize(glm::cross((p3 - p1),(p2 - p1)));
-
+    objN[x] = glm::normalize(glm::cross((p3 - p1), (p2 - p1)));
     if (x == 3) {
-        for (int i = 0; i < objVar.nInd - 2; i++) {
-            printf(" objN[%d].x = %f \n", i, objN[i].x);
-            printf(" objN[%d].y = %f \n" , i, objN[i].y);
-            printf(" objN[%d].z = %f \n", i, objN[i].z);
-
-        }
-
-        printf("objVar.vboStrdinflt = %d", objVar.vboStrdFlt);
+     printf("objVar.vboStrdinflt = %d \n", objVar.vboStrdFlt);
+     printf("objVar.nTrig = %d \n", objVar.nTrig);
 
 
+     for (int i = 0; i < objVar.nTrig ; i++) {
+         printf(" objN[%d].x = %f \n", i, objN[i].x);
+         printf(" objN[%d].y = %f \n" , i, objN[i].y);
+         printf(" objN[%d].z = %f \n", i, objN[i].z);
+     }
 
-
-    }
-
+   }
+  
+    ////==================================================================
 }
 
-void ComptObjNormal_Kernel() {
+void ComptObjNormal_Kernel(unsigned int nTriangles) {
 
+    //std::cout << "objVar.vboStrdFlt = " << objVar.vboStrdFlt << std::endl;
+    std::cout << "kernel n triangle pass in = " << nTriangles << std::endl;
 
     dim3 blckD(32, 1, 1);
-    dim3 grdD(ceil(objVar.nInd - 2)/blckD.x, 1, 1);
+    dim3 grdD((int)(nTriangles/blckD.x) + 1, 1, 1);
 
     preCompObjNm_Kernel << <grdD, blckD >> > ();
     CheckCudaErr("preCompute Obj Normal launch fail ");
 
     cudaDeviceSynchronize();
-    CheckCudaErr("cudaDeviceSynghconize fail ");
+    CheckCudaErr("preCompute Obj Normal launch fail; cuda Device Synghconize fail ");
 
 }
 

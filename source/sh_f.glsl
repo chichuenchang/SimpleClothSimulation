@@ -30,8 +30,8 @@ void main() {
 	if (ColMode == 0) { outCol = vec4(vsOut_pcol, 1.0f);}
 	else if (ColMode == 1) { outCol = vec4(vsOut_normal, 1.0f); }
 	else if (ColMode == 2) { outCol = vec4(vsOut_uv.x, 0.0f, vsOut_uv.y, 1.0f); }
-	//else if (ColMode == 3) { outCol = vec4( 0.4f*vsOut_pcol + 0.5f*diffCol, 1.0f); }
+	else if (ColMode == 3) { outCol = vec4( 0.4f*vsOut_pcol + 0.5f*diffCol, 1.0f); }
 	//since no color channel in vbo of imported models, use value defined in local
-	else if (ColMode == 3) { outCol = vec4( 0.4f*vec3(0.961f, 0.961f, 0.863f) + 0.5f*diffCol, 1.0f); }
+	//else if (ColMode == 3) { outCol = vec4( 0.4f*vec3(0.961f, 0.7f, 0.8f) + 0.5f*diffCol, 1.0f); }
 
 }

@@ -20,7 +20,7 @@
 #include "util.hpp"
 
 
-void ComptObjNormal_Kernel();
+void ComptObjNormal_Kernel(unsigned int nTriangles);
 
 void Cloth_Launch_Kernel(unsigned int mesh_width,
 	unsigned int mesh_height);

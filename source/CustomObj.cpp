@@ -41,7 +41,7 @@ void CustomObj::Clearobj() {
 		VAO = -1;
 	}
 
-	indexCount = 0;
+	
 }
 
 
@@ -100,11 +100,13 @@ void CustomObj::CreateVbo(float* vertices, unsigned int* indices, unsigned int n
 	objConst.OffstCol = 8;
 	objConst.nVerts = numOfFloat/11;
 	objConst.nInd = numOfIndices;
+	objConst.nTrig = numOfIndices - 2;
 	cpyObjConst(&objConst);
 
 	Clearobj();
 
 	indexCount = numOfIndices;
+	numTriangles = numOfIndices - 2;
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -139,15 +141,15 @@ void CustomObj::CreateVbo(float* vertices, unsigned int* indices, unsigned int n
 void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
 	std::vector<float>* uv, std::vector<float>* normal,
 	std::vector<unsigned int>* indices, unsigned int numOfFloat,
-	unsigned int numOfIndices)
+	unsigned int numOfIndices, glm::vec3 move)
 {
 	//rearrange data to interleave========================
-	unsigned int nEntries = vertPos->size() / 3;
+	unsigned int nVerts = vertPos->size() / 3;
 	std::vector<float> impVbo;
-	for (int i = 0; i < nEntries - 1; i++) {
-		impVbo.push_back(vertPos->at(3 * size_t(i) + 0));
-		impVbo.push_back(vertPos->at(3 * size_t(i) + 1));
-		impVbo.push_back(vertPos->at(3 * size_t(i) + 2));
+	for (int i = 0; i < nVerts; i++) {
+		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 0)+ move.x);
+		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 1)+ move.y);
+		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 2)+ move.z);
 		//		impVbo.push_back(uv->at(2 * size_t(i) + 0));
 		//		impVbo.push_back(uv->at(2 * size_t(i) + 1));
 		impVbo.push_back(0.0f);
@@ -155,23 +157,52 @@ void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
 		impVbo.push_back(normal->at(3 * size_t(i) + 0));
 		impVbo.push_back(normal->at(3 * size_t(i) + 1));
 		impVbo.push_back(normal->at(3 * size_t(i) + 2));
+		//impVbo.push_back(0.3f); //point color
+		//impVbo.push_back(0.35f);
+		//impVbo.push_back(0.8f);
+
 	}
+
+	//use customized struct
+	for (int i = 0; i < nVerts; i++) {
+		objVboData.push_back({
+			0.1f * vertPos->at(3 * size_t(i) + 0) + move.x,
+			0.1f * vertPos->at(3 * size_t(i) + 1) + move.y,
+			0.1f * vertPos->at(3 * size_t(i) + 2) + move.z,
+			0.0f,
+			0.0f,
+			normal->at(3 * size_t(i) + 0),
+			normal->at(3 * size_t(i) + 1),
+			normal->at(3 * size_t(i) + 2),
+			0.3f,
+			0.5f,
+			0.85f,
+		});
+		
+
+	}
+
+
+
 	//================================================
 
-	std::cout << "n float element = " << impVbo.size() << std::endl;
+	std::cout << "impVbo.Size()" << impVbo.size() << std::endl;
+	std::cout << "numOfFloat passin = " << numOfFloat<< std::endl;
 
-	objConst.vboStrdFlt = 8;
+	objConst.vboStrdFlt = sizeof(objVerts)/sizeof(float);
 	objConst.OffstPos = 0;
 	objConst.OffstNm = 5;
-	objConst.OffstCol = 0;
-	objConst.nVerts = numOfFloat / 8;
+	objConst.OffstCol = 8;
+	objConst.nVerts = objVboData.size();
 	objConst.nInd = numOfIndices;
-
+	objConst.nTrig = numOfIndices/3;
 	cpyObjConst(&objConst);
 
+	indexCount = numOfIndices;
+	numTriangles = numOfIndices/3;
+	std::cout << "indexCOunt = " << indexCount << std::endl;
 	Clearobj();
 
-	indexCount = numOfIndices;
 
 	glGenVertexArrays(1, &VAO);
 	glBindVertexArray(VAO);
@@ -182,23 +213,24 @@ void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
 
 	glGenBuffers(1, &VBO);
 	glBindBuffer(GL_ARRAY_BUFFER, VBO);
-	glBufferData(GL_ARRAY_BUFFER, sizeof(float) * impVbo.size(), impVbo.data(), GL_DYNAMIC_DRAW);
+	//glBufferData(GL_ARRAY_BUFFER, sizeof(float) * impVbo.size(), impVbo.data(), GL_DYNAMIC_DRAW);
+	glBufferData(GL_ARRAY_BUFFER, objVboData.size()*sizeof(objVerts), objVboData.data(), GL_DYNAMIC_DRAW);
 
-	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, 0);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(float) * objConst.vboStrdFlt, 0);
 	glEnableVertexAttribArray(0);						   
-	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 3));
+	glVertexAttribPointer(1, 2, GL_FLOAT, GL_FALSE, sizeof(float) * objConst.vboStrdFlt, (void*)(sizeof(float) * 3));
 	glEnableVertexAttribArray(1);							  						  
-	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 5));
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE, sizeof(float) * objConst.vboStrdFlt, (void*)(sizeof(float) * 5));
 	glEnableVertexAttribArray(2);							  						  
-	//glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(float) * 8, (void*)(sizeof(float) * 8));
-	//glEnableVertexAttribArray(3);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE, sizeof(float) * objConst.vboStrdFlt, (void*)(sizeof(float) * 8));
+	glEnableVertexAttribArray(3);
 
 	glBindBuffer(GL_ARRAY_BUFFER, 0);
 	glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, 0);
 	glBindVertexArray(0);
 
 	//only for read in cuda
-	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cstmObjRes, VBO, cudaGraphicsRegisterFlagsReadOnly));
+	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&cstmObjRes, VBO, cudaGraphicsMapFlagsNone));
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&ObjIboRes, IBO, cudaGraphicsMapFlagsNone));
 
 }
@@ -229,7 +261,7 @@ void CustomObj::passObjPtrToKernel() {
 	checkCudaErrors(cudaGraphicsResourceGetMappedPointer((void**)&d_iboPtr, &num_bytes2, ObjIboRes));
 
 	glm::vec3* d_objNormal;
-	checkCudaErrors(cudaMalloc((void**)&d_objNormal, ((long long)indexCount - 2) * sizeof(glm::vec3)));
+	checkCudaErrors(cudaMalloc((void**)&d_objNormal, numTriangles * sizeof(glm::vec3)));
 	
 	passCstmObjPtr(d_ObjPtr, d_iboPtr, d_objNormal);
 }
