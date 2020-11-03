@@ -16,7 +16,7 @@ void ObjData::objData(glm::vec3 p, float s) {
 	nInd_s = 0;
 
 	//0.3f, -0.5f, 0.5f
-	fillCubeVert(glm::vec3(0.4f, -0.5f, 0.5f), s);
+	fillCubeVert(glm::vec3(0.2f, -0.9f, 0.5f), s);
 	fillQuadVert(p + glm::vec3(-0.8f, -0.4f, -0.8f), 3.0f);
 	fillSphereVert(p + glm::vec3(0.0f, 0.0f, 0.0f), 0.1f);
 

@@ -137,7 +137,7 @@ void initScene() {
 	//my own cube method
 	//prepare data
 	ObjData* d = new ObjData;
-	d->objData(glm::vec3(0.0f), 0.3f);
+	d->objData(glm::vec3(0.0f), 0.6f);
 	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
 	//cube->CreateVbo();
 	objLst.push_back(cube);
@@ -220,7 +220,7 @@ void drawScene() {
 	//}
 
 	//objLst[0]->DrawObjStrip(GL_TRIANGLES, GL_LINE);
-	objLst[1]->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
+	objLst[0]->DrawObjStrip(GL_TRIANGLE_STRIP, GL_LINE);
 }
 
 int main() {

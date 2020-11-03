@@ -283,19 +283,25 @@ glm::vec3 computeForceNet(glm::vec3 currPos, float* readBuff, float* writeBuff,
     return netF;
 }
 
-__device__ glm::vec3 samplFunc(float stpT, glm::vec3 pos, glm::vec3 acc, glm::vec3 vel) {
-   
+__device__ glm::vec3 samplFunc(float stpT, glm::vec3 pos) {
+    unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
+    unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
+    if (x > fxVar.width || y > fxVar.height) return;
     
-    return pos + vel * stpT + 0.5f * acc * stpT * stpT;
+    glm::vec3 ForceNet = computeForceNet(pos, ppReadBuff, ppWriteBuff, x, y);
+    glm::vec3 Acc = ForceNet / cVar.M;
+    glm::vec3 Vel = Acc * stpT;
+    
+    return pos + Vel * stpT + 0.5f * Acc * stpT * stpT;
 }
 
 __device__
-glm::vec3 RungeKutt(float stpT, glm::vec3 pT0, glm::vec3 acc, glm::vec3 vel) {
+glm::vec3 RungeKutt(float stpT, glm::vec3 pT0) {
 
     glm::vec3 K1 = pT0;
-    glm::vec3 K2 = samplFunc(stpT / 2.0f, pT0 + K1 / 2.0f, acc, vel);
-    glm::vec3 K3 = samplFunc(stpT / 2.0f, pT0 + K2 / 2.0f, acc, vel);
-    glm::vec3 K4 = samplFunc(stpT, pT0 + K3, acc, vel);
+    glm::vec3 K2 = samplFunc(stpT / 2.0f, pT0 + K1 / 2.0f);
+    glm::vec3 K3 = samplFunc(stpT / 2.0f, pT0 + K2 / 2.0f);
+    glm::vec3 K4 = samplFunc(stpT, pT0 + K3);
 
     return pT0 + 1.0f / 6.0f * stpT * (K1 + 2.0f * K2 + 2.0f * K3 + K4);
 }
@@ -408,7 +414,7 @@ void clothObjCollision(glm::vec3 Pos, glm::vec3& NextPos, unsigned int x, unsign
         if (sphrTrigCollision(Pos, NextPos, r, A, B, C, n)) {
         //if (dn*d0<0) {
 
-            //writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
 
             float dn = getPerpDist(NextPos, r, A, n);
             NextPos += 1.01f * (-dn) * n;
@@ -418,8 +424,6 @@ void clothObjCollision(glm::vec3 Pos, glm::vec3& NextPos, unsigned int x, unsign
             writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
             break;
-
-
 
         }
         else {
