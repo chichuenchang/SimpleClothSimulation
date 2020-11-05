@@ -199,6 +199,16 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	//make sure all are initialized
 	copyFixClothConst(&fxClothConst);
 	updateClothConst(&clothConst);
+
+	//an array that hold the collision status of all particle
+	bool* d_collisionPtr;
+	checkCudaErrors(cudaMalloc((void**)&d_collisionPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(bool)));
+	
+	int* d_collCountPtr;
+	checkCudaErrors(cudaMalloc((void**)&d_collCountPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(int)));
+
+
+	copyCollisionArrayPtr(d_collisionPtr, d_collCountPtr);
 }
 
 //creat cuda registered VBO

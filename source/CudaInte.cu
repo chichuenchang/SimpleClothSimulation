@@ -7,6 +7,10 @@ __constant__
 FixedClothConstant fxVar;
 __constant__
 float* ppReadBuff, *ppWriteBuff;
+__device__
+bool* colFlag;
+__device__
+int* collCount;
 
 //customized obj
 __constant__
@@ -37,6 +41,7 @@ void passCstmObjPtr(float* d_vbo, unsigned int* d_ibo, glm::vec3* d_objN) {
     cudaMemcpyToSymbol(objIndBuff, &d_ibo, sizeof(float*));
     CheckCudaErr("sphere vbo pointer copy fail");
     cudaMemcpyToSymbol(objN, &d_objN, sizeof(float*));
+    CheckCudaErr("object normal array pointer copy fail");
 
 }
 
@@ -65,6 +70,16 @@ void copyFixClothConst(FixedClothConstant* in_fxConst) {
     cudaMemcpyToSymbol(fxVar, in_fxConst, sizeof(FixedClothConstant));
     CheckCudaErr("fixed constant memory copy fail");
 }
+
+void copyCollisionArrayPtr(bool* d_collPtr, int* d_collCountPtr) {
+
+    cudaMemcpyToSymbol(colFlag, &d_collPtr, sizeof(bool*));
+    CheckCudaErr("collision flag array pointer copy fail");
+
+    cudaMemcpyToSymbol(collCount, &d_collCountPtr, sizeof(int*));
+    CheckCudaErr("collision flag array pointer copy fail");
+}
+
 
 __device__
 glm::vec3 readFromVBO(float* d_vboPtr, unsigned int ind_x, unsigned int ind_y,
@@ -104,6 +119,12 @@ void writeObjVbo(glm::vec3 in_vec3, int threadInd, float* objVbo, unsigned int* 
     objVbo[objIbo[threadInd] * strdFlt + offst + 1] = in_vec3.y;
     objVbo[objIbo[threadInd] * strdFlt + offst + 2] = in_vec3.z;
 
+}
+
+__device__
+void writeCollFlagArray(bool collision, unsigned int ind_x, unsigned int ind_y) {
+
+    colFlag[ind_x * fxVar.height + ind_y] = collision;
 }
 
 
@@ -366,7 +387,6 @@ float getPerpDist(glm::vec3 Pos, float r, glm::vec3 knownP, glm::vec3 n) {
 
 }
 
-
 __device__
 bool sphrTrigCollision(glm::vec3 pos, glm::vec3 posNext, float r,
     glm::vec3 A, glm::vec3 B, glm::vec3 C, glm::vec3 n) {
@@ -409,29 +429,61 @@ void clothObjCollision(glm::vec3 Pos, glm::vec3& NextPos, unsigned int x, unsign
         glm::vec3 C = readObjVbo(i + 1 + i % 2, objBuff, objIndBuff, objVar.vboStrdFlt, objVar.OffstPos);
         glm::vec3 n = objN[i];
 
-            //float dn = getPerpDist(NextPos, r, A, n);
-            //float d0 = getPerpDist(Pos, r, A, n);
         if (sphrTrigCollision(Pos, NextPos, r, A, B, C, n)) {
-        //if (dn*d0<0) {
+            
+            //if collision true write to the bool array
+            colFlag[x * fxVar.height + y] = true;
+            collCount[x * fxVar.height + y] = 0;
 
-            writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+            //if (x == 30 && y == 40) {
+            //    printf("collision status is %d \n", colFlag[x * fxVar.height + y]);
+
+            //}
+
+            //writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
 
             float dn = getPerpDist(NextPos, r, A, n);
             NextPos += 1.01f * (-dn) * n;
 
-            //glm::vec3 s = - glm::dot(Vel, glm::normalize(n)) * glm::normalize(n);
-            //Vel += s;
-            writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
             break;
 
         }
         else {
 
-              writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+
+              //TODO: make a bool array that stores the state of collision
+              //this frame false, last frame true
+            if (colFlag[x * fxVar.height + y]) {// if last frame collision is true
+                writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
+                collCount[x * fxVar.height + y] = 10;
+            }
+            else {
+                if (collCount[x * fxVar.height + y] >9) {
+                    collCount[x * fxVar.height + y] += 1;
+                    //writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
+                }
+
+            
+            }
+              //writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+              
+              //if collision false write to the bool array
+              colFlag[x * fxVar.height + y] = false;
+              
+              //if (x == 30 && y == 40) {
+              //    printf("collision status is %d \n", colFlag[x * fxVar.height + y]);
+
+              //}
         }
 
     }
+
+   
+
+
+
+
 }
 
 
@@ -462,6 +514,12 @@ void computeParticlePos_Kernel(unsigned int width,
     Vel += Acc * cVar.stp;
     writeToVBO(!cVar.frz ? Vel: glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
 
+    //damping
+    glm::vec3 ForceDamp = -cVar.Dp * Vel * (glm::length(Vel));
+
+    ForceNet += ForceDamp;
+    //Acc = ForceNet / cVar.M;
+
     glm::vec3 nextPos;
 
     if ((x == 0 && y == 0) || (x == 0 && y == height - 1) ||
@@ -482,6 +540,23 @@ void computeParticlePos_Kernel(unsigned int width,
     }
 
     clothObjCollision(Pos, nextPos, x, y); 
+
+    //color collision
+    if(colFlag[x * fxVar.height + y]) writeToVBO(glm::vec3(1.0f, 0.0f, 1.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+    else writeToVBO(glm::vec3(0.0f, 0.0f, 0.0f), ppWriteBuff, x, y, fxVar.OffstCol);
+
+
+    if (collCount[x * fxVar.height + y] >= 50) {
+        collCount[x * fxVar.height + y] = 0;
+        writeToVBO(glm::vec3(0.0f), ppWriteBuff, x, y, fxVar.OffstVel);
+        nextPos = Pos;
+    }
+
+    if (x == 30 && y == 41) {
+        printf("collision status is %d \n", colFlag[x * fxVar.height + y]);
+        printf("collision count = %d \d", collCount[x * fxVar.height + y]);
+    }
+
 
     writeToVBO(nextPos, ppWriteBuff, x, y, fxVar.OffstPos);
 

@@ -29,6 +29,7 @@ void CheckCudaErr(const char* msg);
 void passPPbuffPtr(float* d_vbo1, float* d_vbo2);
 void updateClothConst(ClothConstant* in_passVar);
 void copyFixClothConst(FixedClothConstant* in_fxConst);
+void copyCollisionArrayPtr(bool* d_collPtr, int* d_collCountPtr);
 
 //from customized obj to kernel
 void passCstmObjPtr(float* d_vbo, unsigned int* d_ibo, glm::vec3* d_objN);

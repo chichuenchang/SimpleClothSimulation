@@ -145,23 +145,23 @@ void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
 {
 	//rearrange data to interleave========================
 	unsigned int nVerts = vertPos->size() / 3;
-	std::vector<float> impVbo;
-	for (int i = 0; i < nVerts; i++) {
-		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 0)+ move.x);
-		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 1)+ move.y);
-		impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 2)+ move.z);
-		//		impVbo.push_back(uv->at(2 * size_t(i) + 0));
-		//		impVbo.push_back(uv->at(2 * size_t(i) + 1));
-		impVbo.push_back(0.0f);
-		impVbo.push_back(0.0f);
-		impVbo.push_back(normal->at(3 * size_t(i) + 0));
-		impVbo.push_back(normal->at(3 * size_t(i) + 1));
-		impVbo.push_back(normal->at(3 * size_t(i) + 2));
-		//impVbo.push_back(0.3f); //point color
-		//impVbo.push_back(0.35f);
-		//impVbo.push_back(0.8f);
+	//std::vector<float> impVbo;
+	//for (int i = 0; i < nVerts; i++) {
+	//	impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 0)+ move.x);
+	//	impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 1)+ move.y);
+	//	impVbo.push_back(0.1f * vertPos->at(3 * size_t(i) + 2)+ move.z);
+	//	//		impVbo.push_back(uv->at(2 * size_t(i) + 0));
+	//	//		impVbo.push_back(uv->at(2 * size_t(i) + 1));
+	//	impVbo.push_back(0.0f);
+	//	impVbo.push_back(0.0f);
+	//	impVbo.push_back(normal->at(3 * size_t(i) + 0));
+	//	impVbo.push_back(normal->at(3 * size_t(i) + 1));
+	//	impVbo.push_back(normal->at(3 * size_t(i) + 2));
+	//	//impVbo.push_back(0.3f); //point color
+	//	//impVbo.push_back(0.35f);
+	//	//impVbo.push_back(0.8f);
 
-	}
+	//}
 
 	//use customized struct
 	for (int i = 0; i < nVerts; i++) {
@@ -186,7 +186,7 @@ void CustomObj::CreateImptObjVbo(std::vector<float>* vertPos,
 
 	//================================================
 
-	std::cout << "impVbo.Size()" << impVbo.size() << std::endl;
+	//std::cout << "impVbo.Size()" << impVbo.size() << std::endl;
 	std::cout << "numOfFloat passin = " << numOfFloat<< std::endl;
 
 	objConst.vboStrdFlt = sizeof(objVerts)/sizeof(float);
