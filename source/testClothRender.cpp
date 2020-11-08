@@ -192,7 +192,18 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstNm = 5;
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
-
+	fxClothConst.sphR = 0.01; 
+	fxClothConst.cellUnit = fxClothConst.sphR;
+	//fxclothConst.spcSt and spaceMX are the BB of space
+	fxClothConst.spcSt = glm::vec3(-0.2f, -1.0f, -0.1f);
+	glm::vec3 spaceMx = glm::vec3(1.0f, 0.1f, 1.4f);
+	fxClothConst.spcDim = glm::vec3(
+		(spaceMx.x - fxClothConst.spcSt.x) / fxClothConst.cellUnit, 
+		(spaceMx.y - fxClothConst.spcSt.y) / fxClothConst.cellUnit,
+		(spaceMx.z - fxClothConst.spcSt.z) / fxClothConst.cellUnit);
+	std::cout << "spaceDim.x = " << fxClothConst.spcDim.x << " spaceDim. y = " << fxClothConst.spcDim.y <<
+		"spaceDim.z = " << fxClothConst.spcDim.z << std::endl;
+	std::cout << "spaceDim x *y *z = " << fxClothConst.spcDim.x * fxClothConst.spcDim.y * fxClothConst.spcDim.z << std::endl;
 	cloth_width = clothW;
 	cloth_height = clothH;
 
@@ -200,24 +211,38 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	copyFixClothConst(&fxClothConst);
 	updateClothConst(&clothConst);
 
-	//an array that hold the collision status of all particle
+	//cloth obj collision
 	bool* d_collisionPtr;
 	checkCudaErrors(cudaMalloc((void**)&d_collisionPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(bool)));
 	
 	int* d_collCountPtr;
 	checkCudaErrors(cudaMalloc((void**)&d_collCountPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(int)));
 
+	//cloth cloth collision
+	bool* d_clthClthCollMarkPtr;
+	checkCudaErrors(cudaMalloc((void**)&d_clthClthCollMarkPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(bool)));
 
-	copyCollisionArrayPtr(d_collisionPtr, d_collCountPtr);
+	unsigned int* d_cellHashArryPtr;//size = particle number, holds cell ID
+	checkCudaErrors(cudaMalloc((void**)&d_cellHashArryPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(unsigned int)));
+
+	unsigned int* d_cellArrayPtr;//size = cell number; holds particle ID
+	checkCudaErrors(cudaMalloc((void**)&d_cellArrayPtr, size_t(fxClothConst.spcDim.x) * size_t(fxClothConst.spcDim.y)* size_t(fxClothConst.spcDim.z) * sizeof(unsigned int)));
+
+	int* d_clothClothcollCountPtr;
+	checkCudaErrors(cudaMalloc((void**)&d_clothClothcollCountPtr, size_t(cloth_width) * size_t(cloth_height) * sizeof(int)));
+
+	glm::vec3* d_nextPosArray;
+	checkCudaErrors(cudaMalloc((void**)&d_nextPosArray, size_t(cloth_width) * size_t(cloth_height) * sizeof(glm::vec3)));
+	
+
+	copyArrayPtr(d_collisionPtr, d_collCountPtr, d_clthClthCollMarkPtr, d_clothClothcollCountPtr, d_cellHashArryPtr, d_cellArrayPtr, d_nextPosArray);
 }
 
 //creat cuda registered VBO
 void testClothRender::initCloth(const unsigned int numVertsWidth, const unsigned int numVertsHeight,
 	GLuint attribLoc, ClothConstant& clthConst, FixedClothConstant& fxConst) {
-
 	
 	initVBO(attribLoc);
-	
 
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes1, cudaVBO1, cudaGraphicsMapFlagsNone));
 	checkCudaErrors(cudaGraphicsGLRegisterBuffer(&CudaVboRes2, cudaVBO2, cudaGraphicsMapFlagsNone));

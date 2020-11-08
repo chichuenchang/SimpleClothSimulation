@@ -54,7 +54,10 @@ struct FixedClothConstant {
 	unsigned int OffstNm;
 	unsigned int OffstCol;
 	unsigned int OffstVel;
-
+	float sphR;
+	float cellUnit;
+	glm::vec3 spcSt;
+	glm::vec3 spcDim;
 };
 
 struct objConst {
