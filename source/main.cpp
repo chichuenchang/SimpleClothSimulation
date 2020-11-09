@@ -137,7 +137,7 @@ void initScene() {
 	//my own cube method
 	//prepare data
 	ObjData* d = new ObjData;
-	d->objData(glm::vec3(0.0f), 0.6f);
+	d->objData(glm::vec3(0.2f, -1.8f, 0.5f), 1.2f);
 	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
 	//cube->CreateVbo();
 	objLst.push_back(cube);
@@ -303,8 +303,8 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 		glm::vec2 msScrnCrdCur = glm::vec2(xp, yp);
 		glm::vec2 delta = msScrnCrdCur - msScrnCrdLast;
 		msScrnCrdLast = msScrnCrdCur;
-		panCam.x += 0.01f * delta.x;
-		panCam.y += -0.01f * delta.y;
+		panCam.x += 0.001f * delta.x;
+		panCam.y += -0.001f * delta.y;
 	}
 
 }
