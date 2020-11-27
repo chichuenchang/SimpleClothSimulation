@@ -183,6 +183,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	clothConst.folding = 0.000f;
 	clothConst.frz = false;
 	clothConst.colorMode = 3;
+	clothConst.pinVertex = false;
 
 	fxClothConst.width = clothW;
 	fxClothConst.height = clothH;
@@ -195,7 +196,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.sphR = 0.01f; 
 	fxClothConst.cellUnit = fxClothConst.sphR;
 	//fxclothConst.spcSt and spaceMX are the BB of space
-	fxClothConst.spcSt = glm::vec3(-0.2f, -1.0f, -0.1f);
+	fxClothConst.spcSt = glm::vec3(-0.2f, -1.0f, -0.2f);
 	glm::vec3 spaceMx = glm::vec3(1.0f, 0.1f, 1.4f);
 	fxClothConst.spcDim = glm::vec3(
 		(spaceMx.x - fxClothConst.spcSt.x) / fxClothConst.cellUnit, 

@@ -14,7 +14,8 @@ out vec4 outCol;	// Final pixel color
 
 //[local]======================================================
 vec3 d_Lght = vec3 (1.0f, 1.0f, 1.0f);
-vec3 col_Lght = vec3 (200.0f/300.0f, 180.0f/300.0f, 120.0f/300.0f);
+//vec3 col_Lght = vec3 (200.0f/300.0f, 180.0f/300.0f, 120.0f/300.0f);
+vec3 col_Lght = vec3 (0.961f, 0.961f, 0.863f);
 
 void main() {
 	

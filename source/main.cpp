@@ -137,7 +137,8 @@ void initScene() {
 	//my own cube method
 	//prepare data
 	ObjData* d = new ObjData;
-	d->objData(glm::vec3(0.2f, -1.8f, 0.5f), 1.2f);
+	//glm::vec3(-0.5f, -2.8f, -0.1f), 2.0f
+	d->objData(glm::vec3(0.0f, -10.7f, 0.2f), 0.5f);
 	cube->CreateVbo(d->vPtr_cb, d->indPtr_cb, d->nFlt_cb, d->nInd_cb);
 	//cube->CreateVbo();
 	objLst.push_back(cube);
@@ -360,7 +361,10 @@ void drawGui(GLfloat* clearCol, bool show_demo, ClothConstant *clothConst) {
 		}
 		
 		if (ImGui::CollapsingHeader("External Properties")) {
-			
+			if (ImGui::Button("upPin Vertices")) {
+				cVar.pinVertex = !cVar.pinVertex;
+			}
+
 			ImGui::SliderFloat("Folding", &clothConst->folding, -1.000f, 1.000f, "Folding = %.3f");
 			
 			ImGui::SliderFloat("Wind Str", &clothConst->WStr, 0.0f, 0.1f, "Wind Str = %.3f");

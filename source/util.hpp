@@ -43,6 +43,8 @@ struct ClothConstant {
 
 	int colorMode;
 
+	bool pinVertex;
+
 };
 
 struct FixedClothConstant {

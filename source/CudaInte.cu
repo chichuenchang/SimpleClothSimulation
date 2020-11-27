@@ -256,11 +256,11 @@ glm::vec3 computeInnerForce(float* readBuff, float* writeBuff, unsigned int x,
     }
 
     //wrtie innerforce to col channel
-    //if (cVar.colorMode == 0) {
-    //    glm::vec3 col = glm::vec3(4.0f*glm::length(innF) , 0.3f, 0.8f - 3.0f*glm::length(innF));
-    //    writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
-    //}
-    //else { writeToVBO(glm::vec3(0.961f, 0.961f, 0.863f), ppWriteBuff, x, y, fxVar.OffstCol); }
+    if (cVar.colorMode == 0) {
+        glm::vec3 col = glm::vec3(4.0f*glm::length(innF) , 0.3f, 0.8f - 3.0f*glm::length(innF));
+        writeToVBO(col, ppWriteBuff, x, y, fxVar.OffstCol);
+    }
+    else { writeToVBO(glm::vec3(0.961f, 0.961f, 0.863f), ppWriteBuff, x, y, fxVar.OffstCol); }
     /////////////////////////////////////////////////////////////////////////////////
  
     return innF;
@@ -512,27 +512,6 @@ void clthClthCollision(glm::vec3 Pos, glm::vec3& nextPos, unsigned int x, unsign
     //test with or without syncthreads()
     __syncthreads();
 
-    //debug print=========================================
-    //test
-    glm::vec3 testCellPos = getCellCoord(Pos, fxVar.spcSt, fxVar.spcDim, fxVar.cellUnit);
-    unsigned int testCellIDfromPos = hashCellID(Pos, fxVar.spcSt, fxVar.spcDim, fxVar.cellUnit);
-    glm::vec3 testRevHashCellPos = revHashID(testCellIDfromPos, fxVar.spcSt, fxVar.spcDim, fxVar.cellUnit);
-    glm::vec3 t = nextPosArray[x * fxVar.height + y];
-    if (x == 30 && y == 40) {
-
-        //printf("particle pos.x = %f, pos.y = %f, pos.z = %f \n", Pos.x, Pos.y, Pos.z);
-        //printf("cellpos.x = %f, cellpos.y = %f, cellpos.z = %f \n", testCellPos.x, testCellPos.y, testCellPos.z);
-        //printf("revCellpos.x = %f, revCellpos.y = %f, revCellpos.z = %f \n", testRevHashCellPos.x, testRevHashCellPos.y, testRevHashCellPos.z);
-        //printf("next pos t.x = %f, t.y = %f, t.z = %f \n", t.x, t.y, t.z);
-
-        //printf("cell id = %d \n", hashID[x*fxVar.height + y]);
-        //printf("cloth cloth collision mark = %d \n", clthClthMrk[x*fxVar.height + y]);
-        //unsigned int a, b;
-        //geIndFromParticleID(x * fxVar.height + y, a, b);
-        //printf("a = %d, b = %d \n", a, b);
-
-
-    }
 
     //solution fast but consumes memory
     glm::vec3 cellPos = getCellCoord(Pos, fxVar.spcSt, fxVar.spcDim, fxVar.cellUnit);
@@ -565,13 +544,22 @@ void clthClthCollision(glm::vec3 Pos, glm::vec3& nextPos, unsigned int x, unsign
                     else {
                         //detect collision
                         mdir = nextPos - nextPosArray[tempx * fxVar.height + tempy];
-                        if (glm::length(mdir) <= 1.5f * fxVar.sphR) {
+                        if (glm::length(mdir) <= 2.0f * fxVar.sphR) {
                             //mark collision
                             //clthClthMrk[x * fxVar.height + y] = true;
                             noColl++;
-                            //move particle
-                            nextPos += glm::normalize(mdir) * 0.5f * (1.5f * fxVar.sphR - glm::length(mdir));
-                                        
+
+                            if ((colFlag[tempx * fxVar.height + tempy] && colFlag[x * fxVar.height + y]) ||
+                                (!colFlag[tempx * fxVar.height + tempy] && !colFlag[x * fxVar.height + y])) {
+
+                                //move particle
+                                nextPos += glm::normalize(mdir) * 0.5f * (2.0f * fxVar.sphR - glm::length(mdir));
+                            }
+                            else if (colFlag[tempx * fxVar.height + tempy] && !colFlag[x * fxVar.height + y]) {
+                                nextPos += glm::normalize(mdir) * (2.0f * fxVar.sphR - glm::length(mdir));
+                            }
+                            //else do nothing
+
                         }
                     }
                 }
@@ -616,13 +604,13 @@ void fixDampTermBug(glm::vec3 pos, glm::vec3& posnext, unsigned int indx, unsign
     }
 
     if (clthClthMrk[indx * fxVar.height + indy]) clthClthCollCount[indx * fxVar.height + indy] = 0;
-    else if (!clthClthMrk[indx * fxVar.height + indy] && clthClthCollCount[indx * fxVar.height + indy] < 3) {
+    else if (!clthClthMrk[indx * fxVar.height + indy] && clthClthCollCount[indx * fxVar.height + indy] < 2) {
         clthClthCollCount[indx * fxVar.height + indy]++;
     }
-    else if (clthClthCollCount[indx * fxVar.height + indy] == 3) {
+    else if (clthClthCollCount[indx * fxVar.height + indy] == 2) {
         writeToVBO(glm::vec3(0.0f), ppWriteBuff, indx, indy, fxVar.OffstVel);
         posnext = pos;
-        clthClthCollCount[indx * fxVar.height + indy] = 99;
+        clthClthCollCount[indx * fxVar.height + indy] = 299;
     }
 
 }
@@ -650,6 +638,7 @@ void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
 
     //update next position
     glm::vec3 nextPos;
+    //pin/unpin vertices
     if ((x == 16 && y == 0) || 
         (x == 16 && y == height - 1) ||
         (x == 16 && y == height / 4) || 
@@ -660,10 +649,10 @@ void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
     }
     else {
         //nextPos = RungeKutt(cVar.stp, Pos, Vel, Acc);
-        nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
         //nextPos = Pos + Vel;
-        
+        nextPos = !cVar.frz? VerletAlg(Pos, lastPos, Acc, cVar.stp): Pos;
     }
+
     
     //before collision store temporary nextPos
     nextPosArray[x * fxVar.height + y] = nextPos;
@@ -739,11 +728,7 @@ void preCompObjNm_Kernel() {
     //  }
 
     //}
-    for (int i = 0; i < 200; i++) {
 
-        printf("cellArray [%d] = %d \n", i, cellArray[i]);
-
-    }
 
 
     //TRIANGLE STRIP METHOD==========================================
