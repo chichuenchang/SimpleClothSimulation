@@ -639,10 +639,10 @@ void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
     //update next position
     glm::vec3 nextPos;
     //pin/unpin vertices
-    if ((x == 16 && y == 0) || 
-        (x == 16 && y == height - 1) ||
-        (x == 16 && y == height / 4) || 
-        (x == 16 && y == 3 * height / 4) ) {
+    if ((x == 0 && y == 0) || 
+        (x == 0 && y == height - 1) ||
+        (x == 0 && y == height / 4) || 
+        (x == 0 && y == 3 * height / 4) ) {
         glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.0f) - Pos;
         //glm::vec3 dir = glm::vec3(1.0f, 0.0f, 0.0f);
         nextPos = Pos + 0.001f * (!cVar.frz ? dir : glm::vec3(0.0f)) * cVar.folding;
