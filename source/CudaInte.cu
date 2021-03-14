@@ -767,9 +767,6 @@ void preCompObjNm_Kernel() {
 
 void ComptObjNormal_Kernel(unsigned int nTriangles) {
 
-
-
-
     //std::cout << "objVar.vboStrdFlt = " << objVar.vboStrdFlt << std::endl;
     std::cout << "kernel n triangle pass in = " << nTriangles << std::endl;
 
