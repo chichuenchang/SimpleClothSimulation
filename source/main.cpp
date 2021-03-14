@@ -13,8 +13,6 @@
 
 //5. add textures
 
-//6. clamp the length between particle
-
 #include "testClothRender.h"
 #include "CudaInte.cuh"
 #include "CustomObj.h"
@@ -41,7 +39,7 @@ glm::vec3 camCoords = glm::vec3(0.0, 0.0, -8.3);
 glm::vec2 camOrigin;
 glm::vec2 mouseOrigin;
 
-glm::vec2 msScrnCrdLast = glm::vec2(0.0f);
+glm::vec2 mouseScreenCoordLast = glm::vec2(0.0f);
 
 //shader ID
 GLuint shaderProgram;
@@ -280,7 +278,7 @@ void mouseButtonCallback(GLFWwindow* w, int button, int action, int mode) {
 		pan = true;
 		double xpos, ypos; //has to be double, as is the argument type of glfwGetCursorPos();
 		glfwGetCursorPos(w, &xpos, &ypos);
-		msScrnCrdLast = glm::vec2(xpos, ypos);
+		mouseScreenCoordLast = glm::vec2(xpos, ypos);
 	}
 	if (button == GLFW_MOUSE_BUTTON_MIDDLE && action == GLFW_RELEASE) {
 		pan = false;
@@ -302,8 +300,8 @@ void cursorPosCallback(GLFWwindow* w, double xp, double yp) {
 	}
 	if (pan) {
 		glm::vec2 msScrnCrdCur = glm::vec2(xp, yp);
-		glm::vec2 delta = msScrnCrdCur - msScrnCrdLast;
-		msScrnCrdLast = msScrnCrdCur;
+		glm::vec2 delta = msScrnCrdCur - mouseScreenCoordLast;
+		mouseScreenCoordLast = msScrnCrdCur;
 		panCam.x += 0.001f * delta.x;
 		panCam.y += -0.001f * delta.y;
 	}
