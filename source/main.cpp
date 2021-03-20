@@ -49,8 +49,8 @@ GLuint attribLoc = 0;
 testClothRender cloth;
 
 CustomObj* cube = new CustomObj;
-const unsigned int clothWidth = 32;
-const unsigned int clothHeight = 64;
+const unsigned int clothWidth = 90;
+const unsigned int clothHeight = 90;
 
 
 std::vector<CustomObj*> objLst;
