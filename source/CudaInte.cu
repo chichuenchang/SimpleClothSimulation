@@ -619,7 +619,7 @@ __global__
 void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
     unsigned int x = blockIdx.x * blockDim.x + threadIdx.x;
     unsigned int y = blockIdx.y * blockDim.y + threadIdx.y;
-    if (x > width || y > height) return;
+    if (x > width -1 || y > height -1) return;
 
     //current pos and last frame pos
     glm::vec3 Pos = readFromVBO(ppReadBuff, x, y, fxVar.OffstPos);
@@ -639,10 +639,10 @@ void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
     //update next position
     glm::vec3 nextPos;
     //pin/unpin vertices
-    if ((x == 0 && y == 0) || 
-        (x == 0 && y == height - 1) ||
-        (x == 0 && y == height / 4) || 
-        (x == 0 && y == 3 * height / 4) ) {
+    if ((x == width/2 && y == 0) || 
+        (x == width/2 && y == height - 1) ||
+        (x == width/2 && y == height / 4) || 
+        (x == width/2 && y == 3 * height / 4) ) {
         glm::vec3 dir = glm::vec3(0.0f, 0.0f, 0.0f) - Pos;
         //glm::vec3 dir = glm::vec3(1.0f, 0.0f, 0.0f);
         nextPos = Pos + 0.001f * (!cVar.frz ? dir : glm::vec3(0.0f)) * cVar.folding;
@@ -677,17 +677,24 @@ void computeParticlePos_Kernel(unsigned int width, unsigned int height) {
 void Cloth_Launch_Kernel(const unsigned int mesh_width, const unsigned int mesh_height)
 {
     dim3 block(32, 32, 1);
-    dim3 grid(ceil(mesh_width / block.x), ceil(mesh_height / block.y), 1);
+    dim3 grid(ceil((float)mesh_width / block.x), ceil((float)mesh_height / block.y), 1);
 
-    //std::cout << " readBuff = " << readBuff << std::endl;
-    //std::cout << "ppReadBuff = " << ppReadBuff << std::endl;
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
+    cudaEventRecord(start);
     computeParticlePos_Kernel << < grid, block >> > (mesh_width, mesh_height);
     CheckCudaErr("simple_vbo_kernel launch fail ");
 
     cudaDeviceSynchronize();
     CheckCudaErr("cudaDeviceSynghconize fail ");
 
+    float milliSecond = 0;
+    cudaEventRecord(stop);
+    cudaEventSynchronize(stop);
+    cudaEventElapsedTime(&milliSecond, start, stop);
+    printf("%f,  %.1f, \n", milliSecond, ImGui::GetIO().Framerate);
 
     //std::cout << "objConst. vboStdinFlt = " << objVar.vboStrdFlt << std::endl;
 

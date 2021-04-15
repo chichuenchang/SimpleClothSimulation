@@ -194,7 +194,7 @@ void testClothRender::initClothConstValue(ClothConstant& clothConst, FixedClothC
 	fxClothConst.OffstCol = 8;
 	fxClothConst.OffstVel = 11;
 	fxClothConst.sphR = 0.01f; 
-	fxClothConst.cellUnit = fxClothConst.sphR;
+	fxClothConst.cellUnit = 1.15*fxClothConst.sphR;
 	//fxclothConst.spcSt and spaceMX are the BB of space
 	fxClothConst.spcSt = glm::vec3(-0.2f, -1.0f, -0.2f);
 	glm::vec3 spaceMx = glm::vec3(1.0f, 0.1f, 1.4f);
